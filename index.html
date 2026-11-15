@@ -309,6 +309,50 @@ a.card { display: flex; }
   .print-only { display: block; margin-top: 18px; font-size: 10pt; color: #555; border-top: 1px solid #999; padding-top: 8px; }
 }
 
+/* ===== 5단계: 회원 기능 (로그인/가입/마이페이지) ===== */
+.auth { align-items: center; }
+a.btn { display: inline-flex; align-items: center; justify-content: center; }
+.auth-name { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; color: var(--muted); margin-right: 4px; }
+.auth-card { max-width: 440px; margin: 32px auto 0; }
+.auth-card .page-title { margin-top: 0; font-size: 28px; }
+.form { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
+.field { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.field label { font-size: 14px; font-weight: 600; }
+.field input {
+  height: 48px; padding: 0 14px; font-size: 16px; font-family: inherit; color: var(--fg); background: #fff;
+  border: 1.5px solid #999; border-radius: var(--radius); width: 100%;
+}
+.field input:focus { border-color: var(--fg); outline: 2px solid var(--fg); outline-offset: 1px; }
+.btn-block { width: 100%; min-height: 48px; font-size: 16px; }
+.form-msg { min-height: 0; margin: 0; font-size: 14px; line-height: 1.5; }
+.form-msg.is-error { color: #b00020; padding: 10px 12px; border-left: 3px solid #b00020; background: #fdf3f4; }
+.form-msg.is-ok { color: #0a5c2a; padding: 10px 12px; border-left: 3px solid #0a7a2f; background: #f1faf4; }
+.form-links { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin-top: 18px; font-size: 14px; }
+.form-links a, .form-links .link-btn { color: var(--muted); text-decoration: underline; padding: 4px 0; }
+.form-links a:hover, .form-links .link-btn:hover { color: var(--fg); }
+.auth-card .fine { margin: 10px 0; }
+.auth-card .btn-ghost { margin-top: 12px; }
+.err a { text-decoration: underline; }
+
+.my-layout { display: grid; gap: 22px; padding-top: 24px; max-width: 820px; }
+.my-box { border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+.my-box h2 { font-size: 18px; margin-bottom: 12px; }
+.acct { grid-template-columns: 1fr; }
+.form-inline { flex-direction: row; align-items: flex-end; margin-top: 14px; }
+.form-inline .btn { height: 48px; }
+.paid-list li { border-bottom: 1px solid var(--line); }
+.paid-list a { display: flex; justify-content: space-between; gap: 12px; padding: 12px 2px; font-weight: 600; }
+.paid-list a:hover span:first-child { text-decoration: underline; text-underline-offset: 4px; }
+.buy .muted { margin-left: 2px; }
+
+@media (max-width: 640px) {
+  .auth-name { display: none; }
+  .auth-card { margin-top: 20px; }
+  .form-inline { flex-direction: column; align-items: stretch; }
+  .my-box { padding: 16px; }
+}
+@media print { .auth, .my-layout .form { display: none !important; } }
+
 </style>
 
   <!-- =====================================================================
@@ -320,8 +364,8 @@ a.card { display: flex; }
        ===================================================================== -->
   <script>
     window.MUNHAK_CONFIG = {
-      SUPABASE_URL: "https://qwsjjkhgfnypuzvxgoec.supabase.co",
-      SUPABASE_ANON_KEY: "sb_publishable_pZmVLiE7pDBWhCPdZEtwTA_j9JmcN3H"
+      SUPABASE_URL: "YOUR_SUPABASE_URL",
+      SUPABASE_ANON_KEY: "YOUR_SUPABASE_ANON_KEY"
     };
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -342,10 +386,7 @@ a.card { display: flex; }
         <a href="#/works?exam=1">기출 분석</a>
         <a href="#/plans">무료·프리미엄</a>
       </nav>
-      <div class="auth">
-        <button type="button" class="btn btn-ghost" data-notice="login">로그인</button>
-        <button type="button" class="btn btn-solid" data-notice="signup">회원가입</button>
-      </div>
+      <div class="auth" id="authArea"></div>
     </div>
   </header>
 
@@ -354,7 +395,7 @@ a.card { display: flex; }
   <footer class="site-footer">
     <div class="wrap footer-row">
       <strong>문학연구소</strong>
-      <span>수능 문학 분석 플랫폼 · 개발 중(4단계)</span>
+      <span>수능 문학 분석 플랫폼 · 개발 중(5단계)</span>
       <span id="modeLabel"></span>
     </div>
   </footer>
@@ -582,6 +623,7 @@ window.SAMPLE_DETAILS = {
   "use strict";
 
   var CFG = window.MUNHAK_CONFIG || {};
+  var BOOT_HASH = location.hash || "", BOOT_SEARCH = location.search || "";   // 메일 인증/재설정 링크 처리용
   var SECTIONS = window.SECTIONS || [];
   var WORKS = [];
 
@@ -658,17 +700,20 @@ window.SAMPLE_DETAILS = {
 
   function loadDetail(w) {
     if (MODE === "sample") {
-      return Promise.resolve({ d: (window.SAMPLE_DETAILS || {})[w.id] || {}, files: [] });
+      return Promise.resolve({ d: (window.SAMPLE_DETAILS || {})[w.id] || {}, files: [], purchased: false });
     }
     return Promise.all([
       sb.from("analyses").select("section_key,body").eq("work_id", w.uuid),
-      sb.from("work_files").select("id,file_name,storage_path").eq("work_id", w.uuid)
+      sb.from("work_files").select("id,file_name,storage_path").eq("work_id", w.uuid),
+      (SESSION && w.access === "premium")
+        ? sb.from("purchases").select("id").eq("user_id", userId()).eq("work_id", w.uuid).eq("status", "paid").limit(1)
+        : Promise.resolve({ data: [], error: null })
     ]).then(function (r) {
       if (r[0].error) throw new Error(r[0].error.message);
       if (r[1].error) throw new Error(r[1].error.message);
       var d = {};
       (r[0].data || []).forEach(function (x) { d[x.section_key] = x.body; });
-      return { d: d, files: r[1].data || [] };
+      return { d: d, files: r[1].data || [], purchased: !!(r[2] && r[2].data && r[2].data.length) };
     });
   }
 
@@ -931,9 +976,17 @@ window.SAMPLE_DETAILS = {
       return '<section class="sec" id="sec-' + s.key + '"><h2><span class="sec-no">' + (i + 1) + "</span>" + esc(s.title) + "</h2>" + content + "</section>";
     }).join("");
 
-    var buy = premium
-      ? '<div class="buy"><span class="price big">' + esc(priceText(w)) + '</span><button type="button" class="btn btn-solid" data-notice="buy">구매하기</button></div>'
-      : '<div class="buy"><span class="price big">무료</span></div>';
+    var buy;
+    if (!premium) {
+      buy = '<div class="buy"><span class="price big">무료</span></div>';
+    } else if (isAdmin()) {
+      buy = '<div class="buy"><span class="badge badge-premium">관리자 열람</span></div>';
+    } else if (detail.purchased) {
+      buy = '<div class="buy"><span class="badge badge-premium">구매 완료</span><span class="muted">전체 열람 가능</span></div>';
+    } else {
+      buy = '<div class="buy"><span class="price big">' + esc(priceText(w)) + '</span>' +
+        '<button type="button" class="btn btn-solid" data-buy="' + esc(w.id) + '">구매하기</button></div>';
+    }
 
     var fileBtns = files.map(function (f) {
       return '<button type="button" class="btn btn-ghost" data-file="' + esc(f.storage_path) + '" data-name="' + esc(f.file_name) + '">PDF 다운로드 · ' + esc(f.file_name) + "</button>";
@@ -972,8 +1025,6 @@ window.SAMPLE_DETAILS = {
      6. 안내창 / 파일 다운로드 / 인쇄
      ===================================================================== */
   var NOTICES = {
-    login:  { t: "로그인", b: "로그인은 5단계에서 Supabase Auth로 구현됩니다. 아직 사용할 수 없습니다." },
-    signup: { t: "회원가입", b: "회원가입은 5단계에서 Supabase Auth로 구현됩니다. 아직 사용할 수 없습니다." },
     buy:    { t: "구매하기", b: "결제는 8단계에서 구현됩니다. PG사 계약과 API 키가 준비되기 전에는 테스트 모드로만 만들 수 있으며, 지금은 구매할 수 없습니다." }
   };
   function showMessage(t, b) {
@@ -1005,6 +1056,332 @@ window.SAMPLE_DETAILS = {
   /* =====================================================================
      7. 라우터 (비동기: 데이터가 올 때까지 '불러오는 중' 표시)
      ===================================================================== */
+  /* =====================================================================
+     8. 회원 인증 (Supabase Auth) — 5단계
+     ===================================================================== */
+  var SESSION = null, PROFILE = null, booting = true, recoveryFlag = false;
+  var AUTH_PATHS = ["/login", "/signup", "/reset", "/update-password", "/mypage"];
+  var STATUS_LABEL = { pending: "결제 대기", paid: "결제 완료", cancelled: "취소", refunded: "환불" };
+
+  function userId() { return SESSION && SESSION.user ? SESSION.user.id : null; }
+  function isAdmin() { return !!(PROFILE && PROFILE.role === "admin"); }   // 화면 표시용. 실제 권한은 DB 정책(RLS)이 결정
+  function siteUrl() { return location.origin + location.pathname; }
+  function go(p) { location.hash = "#" + p; }
+  function safeNext(qs) { var n = qs.get("next") || ""; return /^\/[A-Za-z0-9_\/-]*$/.test(n) ? n : ""; }
+  function nextQuery(next) { return next ? "?next=" + encodeURIComponent(next) : ""; }
+
+  function loadProfile() {
+    if (MODE !== "db" || !SESSION) { PROFILE = null; return Promise.resolve(); }
+    return sb.from("profiles").select("display_name,role").eq("id", userId()).maybeSingle()
+      .then(function (r) { PROFILE = (r && r.data) || null; }, function () { PROFILE = null; });
+  }
+
+  function renderAuthArea() {
+    var el = $("authArea"); if (!el) return;
+    if (MODE === "db" && SESSION) {
+      var nm = (PROFILE && PROFILE.display_name) || (SESSION.user && SESSION.user.email) || "회원";
+      el.innerHTML = '<span class="auth-name" title="' + esc(nm) + '">' + esc(nm) + '</span>' +
+        '<a class="btn btn-ghost" href="#/mypage">마이페이지</a>' +
+        '<button type="button" class="btn btn-solid" data-logout="1">로그아웃</button>';
+    } else {
+      el.innerHTML = '<a class="btn btn-ghost" href="#/login">로그인</a><a class="btn btn-solid" href="#/signup">회원가입</a>';
+    }
+  }
+
+  function authErrMsg(e) {
+    var m = (e && e.message) || "", st = e && e.status;
+    if (/invalid login credentials/i.test(m)) return "이메일 또는 비밀번호가 올바르지 않습니다.";
+    if (/rate limit|too many|security purposes/i.test(m) || st === 429) return "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요. (메일 발송 횟수 제한일 수 있습니다)";
+    if (/at least \d+ characters|too short/i.test(m)) return "비밀번호가 너무 짧습니다. 8자 이상으로 입력해 주세요.";
+    if (/different from the old/i.test(m)) return "이전과 같은 비밀번호는 사용할 수 없습니다.";
+    if (/weak|pwned|easy to guess/i.test(m)) return "너무 쉬운 비밀번호입니다. 다른 비밀번호를 사용해 주세요.";
+    if (/valid email|invalid format/i.test(m)) return "이메일 형식이 올바르지 않습니다.";
+    if (/failed to fetch|network/i.test(m)) return "네트워크 오류입니다. 인터넷 연결을 확인해 주세요.";
+    return "처리 중 오류가 발생했습니다. (" + m + ")";
+  }
+  function setMsg(text, ok) {
+    var m = $("formMsg"); if (!m) return;
+    m.textContent = text || "";
+    m.className = "form-msg" + (text ? (ok ? " is-ok" : " is-error") : "");
+  }
+  function pwProblem(pw, pw2) {
+    if (pw.length < 8) return "비밀번호는 8자 이상이어야 합니다.";
+    if (pw.length > 72) return "비밀번호는 72자 이하여야 합니다.";
+    if (pw !== pw2) return "비밀번호 확인이 일치하지 않습니다.";
+    return "";
+  }
+
+  function authShell(title, inner) {
+    return '<section class="page-top"><div class="wrap"><nav class="crumbs" aria-label="현재 위치"><a href="#/">홈</a><span>' + esc(title) + '</span></nav></div></section>' +
+      '<div class="wrap"><div class="auth-card"><h1 class="page-title">' + esc(title) + '</h1>' + inner + '</div></div>';
+  }
+  function field(id, label, type, extra) {
+    return '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" name="' + id + '" type="' + type + '" required ' + (extra || "") + '></div>';
+  }
+  var MSG_P = '<p class="form-msg" id="formMsg" role="alert"></p>';
+
+  function afterLogin(session, dest) {
+    SESSION = session;
+    return loadProfile().then(function () { renderAuthArea(); go(dest); });
+  }
+
+  function renderAuthPage(path, qs) {
+    if (MODE !== "db") {
+      $("view").innerHTML = authShell("회원 기능",
+        '<p>로그인과 회원가입은 Supabase에 연결된 뒤에 사용할 수 있습니다.</p>' +
+        (MODE === "error" ? '<p class="err">' + esc(CONFIG_ERROR) + '</p>' : '<p class="fine">설정 가이드의 4단계(접속 정보를 index.html에 넣기)를 먼저 진행해 주세요.</p>'));
+      document.title = "회원 기능 · 문학연구소";
+      return;
+    }
+    if (path === "/mypage") renderMyPage();
+    else if (path === "/update-password") renderUpdatePassword();
+    else if (path === "/login") renderLogin(qs);
+    else if (path === "/signup") renderSignup(qs);
+    else renderReset();
+  }
+
+  /* ---------- 로그인 ---------- */
+  function renderLogin(qs) {
+    var next = safeNext(qs);
+    if (SESSION) { go(next || "/mypage"); return; }
+    var need = qs.get("need") === "buy" ? '<p class="sample-note">구매하려면 로그인이 필요합니다. 계정이 없다면 회원가입을 먼저 해 주세요.</p>' : "";
+    $("view").innerHTML = authShell("로그인", need +
+      '<form id="loginForm" class="form">' +
+        field("email", "이메일", "email", 'autocomplete="email"') +
+        field("password", "비밀번호", "password", 'autocomplete="current-password" maxlength="72"') +
+        MSG_P + '<button type="submit" class="btn btn-solid btn-block">로그인</button></form>' +
+      '<p class="form-links"><a href="#/signup' + nextQuery(next) + '">회원가입</a><a href="#/reset">비밀번호를 잊으셨나요?</a></p>');
+    document.title = "로그인 · 문학연구소";
+    $("loginForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var email = $("email").value.trim(), pw = $("password").value, btn = e.target.querySelector("button[type=submit]");
+      setMsg(""); btn.disabled = true;
+      sb.auth.signInWithPassword({ email: email, password: pw }).then(function (r) {
+        btn.disabled = false;
+        if (r.error) {
+          if (/email not confirmed/i.test(r.error.message || "")) {
+            var m = $("formMsg");
+            m.className = "form-msg is-error";
+            m.innerHTML = "이메일 인증이 아직 완료되지 않았습니다. 받은 메일의 링크를 눌러 주세요. " +
+              '<button type="button" class="link-btn" data-resend="' + esc(email) + '">인증 메일 다시 보내기</button>';
+          } else setMsg(authErrMsg(r.error));
+          return;
+        }
+        return afterLogin(r.data.session, next || "/mypage");
+      }, function (err) { btn.disabled = false; setMsg(authErrMsg(err)); });
+    });
+  }
+
+  /* ---------- 회원가입 ---------- */
+  function showMailSent(email, title, body) {
+    $("view").innerHTML = authShell(title,
+      '<p>' + body + '</p><p class="fine">메일이 보이지 않으면 스팸함을 확인해 주세요.</p>' + MSG_P +
+      '<button type="button" class="btn btn-ghost" data-resend="' + esc(email) + '">인증 메일 다시 보내기</button>' +
+      '<p class="form-links"><a href="#/">홈으로</a></p>');
+  }
+  function renderSignup(qs) {
+    var next = safeNext(qs);
+    if (SESSION) { go(next || "/mypage"); return; }
+    $("view").innerHTML = authShell("회원가입",
+      '<form id="signupForm" class="form">' +
+        field("email", "이메일", "email", 'autocomplete="email"') +
+        field("password", "비밀번호 (8자 이상)", "password", 'autocomplete="new-password" minlength="8" maxlength="72"') +
+        field("password2", "비밀번호 확인", "password", 'autocomplete="new-password" maxlength="72"') +
+        MSG_P + '<button type="submit" class="btn btn-solid btn-block">회원가입</button></form>' +
+      '<p class="form-links"><a href="#/login' + nextQuery(next) + '">이미 계정이 있으신가요? 로그인</a></p>');
+    document.title = "회원가입 · 문학연구소";
+    $("signupForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var email = $("email").value.trim(), pw = $("password").value, pw2 = $("password2").value;
+      var btn = e.target.querySelector("button[type=submit]");
+      var bad = pwProblem(pw, pw2); if (bad) { setMsg(bad); return; }
+      setMsg(""); btn.disabled = true;
+      sb.auth.signUp({ email: email, password: pw, options: { emailRedirectTo: siteUrl() } }).then(function (r) {
+        btn.disabled = false;
+        if (r.error) { setMsg(authErrMsg(r.error)); return; }
+        var u = r.data && r.data.user;
+        if (u && u.identities && u.identities.length === 0) { setMsg("이미 가입된 이메일입니다. 로그인하거나 비밀번호를 재설정해 주세요."); return; }
+        if (r.data && r.data.session) return afterLogin(r.data.session, next || "/mypage");
+        showMailSent(email, "인증 메일을 보냈습니다", esc(email) + " 로 인증 메일을 보냈습니다. 메일의 링크를 누르면 가입이 완료됩니다.");
+      }, function (err) { btn.disabled = false; setMsg(authErrMsg(err)); });
+    });
+  }
+
+  function resendMail(email) {
+    if (MODE !== "db" || !email) return;
+    sb.auth.resend({ type: "signup", email: email, options: { emailRedirectTo: siteUrl() } }).then(function (r) {
+      if (r.error) setMsg(authErrMsg(r.error)); else setMsg("인증 메일을 다시 보냈습니다. 메일함을 확인해 주세요.", true);
+    }, function (err) { setMsg(authErrMsg(err)); });
+  }
+
+  /* ---------- 비밀번호 재설정 ---------- */
+  function renderReset() {
+    $("view").innerHTML = authShell("비밀번호 재설정",
+      '<p class="fine">가입한 이메일을 입력하면 재설정 링크를 보내 드립니다.</p>' +
+      '<form id="resetForm" class="form">' + field("email", "이메일", "email", 'autocomplete="email"') +
+      MSG_P + '<button type="submit" class="btn btn-solid btn-block">재설정 메일 보내기</button></form>' +
+      '<p class="form-links"><a href="#/login">로그인으로 돌아가기</a></p>');
+    document.title = "비밀번호 재설정 · 문학연구소";
+    $("resetForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var email = $("email").value.trim(), btn = e.target.querySelector("button[type=submit]");
+      setMsg(""); btn.disabled = true;
+      sb.auth.resetPasswordForEmail(email, { redirectTo: siteUrl() + "?reset=1" }).then(function (r) {
+        btn.disabled = false;
+        if (r.error) setMsg(authErrMsg(r.error));
+        else setMsg("입력하신 주소가 가입된 이메일이라면 재설정 메일이 발송됩니다. 메일함(스팸함 포함)을 확인해 주세요.", true);
+      }, function (err) { btn.disabled = false; setMsg(authErrMsg(err)); });
+    });
+  }
+
+  function renderUpdatePassword() {
+    document.title = "비밀번호 변경 · 문학연구소";
+    if (!SESSION) {
+      $("view").innerHTML = authShell("비밀번호 변경",
+        '<p class="err">재설정 링크가 만료되었거나 로그인되어 있지 않습니다.</p>' +
+        '<p class="form-links"><a href="#/reset">재설정 메일 다시 받기</a><a href="#/login">로그인</a></p>');
+      return;
+    }
+    $("view").innerHTML = authShell("비밀번호 변경",
+      '<form id="pwForm" class="form">' +
+        field("password", "새 비밀번호 (8자 이상)", "password", 'autocomplete="new-password" minlength="8" maxlength="72"') +
+        field("password2", "새 비밀번호 확인", "password", 'autocomplete="new-password" maxlength="72"') +
+        MSG_P + '<button type="submit" class="btn btn-solid btn-block">비밀번호 변경</button></form>');
+    $("pwForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var pw = $("password").value, pw2 = $("password2").value, btn = e.target.querySelector("button[type=submit]");
+      var bad = pwProblem(pw, pw2); if (bad) { setMsg(bad); return; }
+      setMsg(""); btn.disabled = true;
+      sb.auth.updateUser({ password: pw }).then(function (r) {
+        btn.disabled = false;
+        if (r.error) { setMsg(authErrMsg(r.error)); return; }
+        $("view").innerHTML = authShell("비밀번호가 변경되었습니다",
+          '<p>새 비밀번호로 변경되었습니다.</p><p class="form-links"><a href="#/mypage">마이페이지로</a></p>');
+      }, function (err) { btn.disabled = false; setMsg(authErrMsg(err)); });
+    });
+  }
+
+  /* ---------- 마이페이지 ---------- */
+  function renderMyPage() {
+    if (!SESSION) { go("/login?next=" + encodeURIComponent("/mypage")); return; }
+    var my = token, u = SESSION.user;
+    var nm = (PROFILE && PROFILE.display_name) || "";
+    var created = String(u.created_at || "").slice(0, 10);
+    document.title = "마이페이지 · 문학연구소";
+    $("view").innerHTML =
+      '<section class="page-top"><div class="wrap"><nav class="crumbs" aria-label="현재 위치"><a href="#/">홈</a><span>마이페이지</span></nav>' +
+        '<h1 class="page-title">마이페이지</h1></div></section>' +
+      '<div class="wrap my-layout">' +
+        '<section class="my-box"><h2>계정 정보</h2><dl class="info acct">' +
+          '<div><dt>이메일</dt><dd>' + esc(u.email || "") + '</dd></div>' +
+          '<div><dt>권한</dt><dd>' + (isAdmin() ? "관리자" : "일반 회원") + '</dd></div>' +
+          '<div><dt>가입일</dt><dd>' + esc(created) + '</dd></div></dl>' +
+          '<form id="nameForm" class="form form-inline"><div class="field"><label for="dname">표시 이름</label>' +
+          '<input id="dname" type="text" maxlength="30" value="' + esc(nm) + '" placeholder="이름 또는 별명"></div>' +
+          '<button type="submit" class="btn btn-ghost">저장</button></form>' + MSG_P +
+          '<p class="form-links"><a href="#/update-password">비밀번호 변경</a><button type="button" class="link-btn" data-logout="1">로그아웃</button></p></section>' +
+        '<section class="my-box"><h2>구매한 작품</h2><div id="paidList"><p class="empty">불러오는 중…</p></div></section>' +
+        '<section class="my-box"><h2>구매 내역</h2><div id="payTable"><p class="empty">불러오는 중…</p></div></section>' +
+      '</div>';
+
+    $("nameForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var v = $("dname").value.trim(), btn = e.target.querySelector("button[type=submit]");
+      btn.disabled = true; setMsg("");
+      sb.from("profiles").update({ display_name: v || null }).eq("id", u.id).then(function (r) {
+        btn.disabled = false;
+        if (r.error) { setMsg("저장하지 못했습니다. (" + r.error.message + ")"); return; }
+        PROFILE = PROFILE || {}; PROFILE.display_name = v || null;
+        renderAuthArea(); setMsg("저장되었습니다.", true);
+      }, function (err) { btn.disabled = false; setMsg(authErrMsg(err)); });
+    });
+
+    sb.from("purchases").select("id,amount,status,created_at,paid_at,works(title,slug)")
+      .eq("user_id", u.id).order("created_at", { ascending: false }).then(function (r) {
+        if (my !== token) return;
+        if (r.error) {
+          $("paidList").innerHTML = $("payTable").innerHTML = '<p class="err">불러오지 못했습니다. (' + esc(r.error.message) + ")</p>";
+          return;
+        }
+        var rows = r.data || [];
+        var seen = {}, paid = rows.filter(function (p) {
+          if (p.status !== "paid" || !p.works || seen[p.works.slug]) return false;
+          seen[p.works.slug] = true; return true;
+        });
+        $("paidList").innerHTML = paid.length
+          ? '<ul class="paid-list">' + paid.map(function (p) {
+              return '<li><a href="#/work/' + esc(p.works.slug) + '"><span>' + esc(p.works.title) + '</span><span class="muted">열람하기</span></a></li>';
+            }).join("") + "</ul>"
+          : '<p class="empty">아직 구매한 자료가 없습니다. <a class="link-btn" href="#/works">작품 둘러보기</a></p>';
+        $("payTable").innerHTML = rows.length
+          ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>일시</th><th>작품</th><th>금액</th><th>상태</th></tr></thead><tbody>' +
+            rows.map(function (p) {
+              return "<tr><td>" + esc(String(p.created_at || "").slice(0, 10)) + "</td><td>" + esc(p.works ? p.works.title : "비공개 또는 삭제된 작품") +
+                "</td><td>" + esc((p.amount || 0).toLocaleString("ko-KR")) + "원</td><td>" + esc(STATUS_LABEL[p.status] || p.status) + "</td></tr>";
+            }).join("") + "</tbody></table></div>"
+          : '<p class="empty">구매 내역이 없습니다.</p>';
+      }, function (err) {
+        if (my !== token) return;
+        $("paidList").innerHTML = $("payTable").innerHTML = '<p class="err">불러오지 못했습니다. (' + esc(err && err.message || err) + ")</p>";
+      });
+  }
+
+  /* ---------- 로그아웃 / 구매 버튼 ---------- */
+  function doLogout() {
+    if (MODE !== "db") return;
+    sb.auth.signOut().then(function () { go("/"); }, function () { go("/"); });
+  }
+  function buyClick(slug) {
+    if (MODE === "db" && !SESSION) { go("/login?next=" + encodeURIComponent("/work/" + slug) + "&need=buy"); return; }
+    showMessage(NOTICES.buy.t, NOTICES.buy.b);
+  }
+
+  /* ---------- 시작: 세션 복구 + 메일 링크(인증/재설정) 처리 ---------- */
+  function startAuth() {
+    if (MODE !== "db") return Promise.resolve();
+    sb.auth.onAuthStateChange(function (event, session) {
+      var prev = userId();
+      SESSION = session;
+      if (event === "PASSWORD_RECOVERY") recoveryFlag = true;
+      if (booting || event === "INITIAL_SESSION") return;
+      if (prev !== userId()) {   // 로그인/로그아웃으로 사용자가 바뀐 경우에만 화면을 다시 그림
+        setTimeout(function () { loadProfile().then(function () { renderAuthArea(); route(); }); }, 0);
+      }
+    });
+    var timeout = new Promise(function (res) { setTimeout(res, 5000); });
+    var sess = sb.auth.getSession().then(function (r) { SESSION = (r && r.data && r.data.session) || null; }, function () { SESSION = null; });
+    return Promise.race([sess, timeout]).then(function () { return loadProfile(); });
+  }
+
+  function handleAuthRedirect() {
+    var isReset = /[?&]reset=1/.test(BOOT_SEARCH) || /type=recovery/.test(BOOT_HASH) || recoveryFlag;
+    var failed = /error_description=|error_code=/.test(BOOT_HASH);
+    var target = "", message = null;
+    if (failed) {
+      target = isReset ? "/reset" : "/login";
+      message = ["인증 링크를 사용할 수 없습니다", "링크가 만료되었거나 이미 사용되었습니다. " +
+        (isReset ? "비밀번호 재설정 메일을 다시 받아 주세요." : "로그인을 시도하거나, 인증 메일을 다시 받아 주세요.")];
+    } else if (isReset) {
+      target = "/update-password";
+    } else if (SESSION) {
+      target = "/mypage"; message = ["이메일 인증 완료", "이메일 인증이 완료되어 로그인되었습니다."];
+    }
+    history.replaceState(null, "", location.pathname + (target ? "#" + target : ""));
+    route();
+    if (message) showMessage(message[0], message[1]);
+  }
+
+  function boot() {
+    $("view").innerHTML = loadingHTML();
+    var raw = BOOT_HASH + "&" + BOOT_SEARCH;
+    var hasAuthParams = /access_token=|error_description=|error_code=|[?&]code=|[?&]reset=1/.test(raw);
+    return startAuth().then(function () {
+      renderAuthArea();
+      booting = false;
+      if (MODE === "db" && hasAuthParams) handleAuthRedirect(); else route();
+    });
+  }
+
   var token = 0;
 
   function route() {
@@ -1014,6 +1391,8 @@ window.SAMPLE_DETAILS = {
     var path = parts[0];
     var qs = new URLSearchParams(parts[1] || "");
     var m = path.match(/^\/work\/([A-Za-z0-9_-]+)$/);
+
+    if (AUTH_PATHS.indexOf(path) !== -1) { renderAuthPage(path, qs); window.scrollTo(0, 0); return; }
 
     if (!worksPromise) $("view").innerHTML = loadingHTML();
 
@@ -1050,6 +1429,11 @@ window.SAMPLE_DETAILS = {
   }
 
   document.addEventListener("click", function (e) {
+    if (e.target.closest("[data-logout]")) { doLogout(); return; }
+    var rs = e.target.closest("[data-resend]");
+    if (rs) { resendMail(rs.getAttribute("data-resend")); return; }
+    var bu = e.target.closest("[data-buy]");
+    if (bu) { buyClick(bu.getAttribute("data-buy")); return; }
     var n = e.target.closest("[data-notice]");
     if (n) { var k = NOTICES[n.getAttribute("data-notice")]; if (k) showMessage(k.t, k.b); return; }
     var j = e.target.closest("[data-jump]");
@@ -1062,7 +1446,7 @@ window.SAMPLE_DETAILS = {
   window.addEventListener("hashchange", route);
 
   setModeLabel();
-  route();
+  boot();
 })();
 
 </script>
