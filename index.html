@@ -289,7 +289,42 @@ a.card { display: flex; }
   .poem { padding: 16px; font-size: 16px; }
 }
 
+/* ===== 4단계: 작업 버튼 / 오류 / 인쇄(PDF 저장) ===== */
+.work-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 18px; }
+.muted { color: var(--muted); font-size: 13px; }
+.err { margin: 10px 0; padding: 12px 14px; background: var(--soft); border-left: 3px solid var(--fg); font-size: 15px; word-break: break-all; }
+.btn:disabled { opacity: .5; cursor: progress; }
+.print-only { display: none; }
+
+@media print {
+  @page { margin: 16mm; }
+  body { font-size: 11pt; color: #000; }
+  .site-header, .site-footer, .toc, .buy, .crumbs, .sample-note, .work-actions, .skip, .lock .badge, dialog { display: none !important; }
+  .page-top { border: 0; padding: 0 0 10px; }
+  .detail-layout { display: block; padding: 0; }
+  .sec { break-inside: auto; padding-bottom: 14px; margin-bottom: 14px; }
+  .sec h2 { break-after: avoid; }
+  .ana, .choice, .tbl tr, .poem { break-inside: avoid; }
+  .poem, .choice.no, .tbl th { background: none; }
+  .print-only { display: block; margin-top: 18px; font-size: 10pt; color: #555; border-top: 1px solid #999; padding-top: 8px; }
+}
+
 </style>
+
+  <!-- =====================================================================
+       ★ Supabase 설정 (여기 두 줄만 본인 값으로 바꾸세요) ★
+       - SUPABASE_URL      : Project Settings > API 의 Project URL  (https://xxxx.supabase.co)
+       - SUPABASE_ANON_KEY : 같은 화면의 anon(public) 키 또는 publishable 키
+       ※ service_role / secret 키는 절대 넣지 마세요. (넣으면 사이트가 막습니다)
+       ※ 값을 바꾸지 않으면 '샘플 모드'로 동작합니다.
+       ===================================================================== -->
+  <script>
+    window.MUNHAK_CONFIG = {
+      SUPABASE_URL: "YOUR_SUPABASE_URL",
+      SUPABASE_ANON_KEY: "YOUR_SUPABASE_ANON_KEY"
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -319,11 +354,12 @@ a.card { display: flex; }
   <footer class="site-footer">
     <div class="wrap footer-row">
       <strong>문학연구소</strong>
-      <span>수능 문학 분석 플랫폼 · 개발 중(3단계)</span>
+      <span>수능 문학 분석 플랫폼 · 개발 중(4단계)</span>
+      <span id="modeLabel"></span>
     </div>
   </footer>
 
-  <!-- 안내 대화상자: 아직 구현되지 않은 기능을 솔직하게 알려줌 -->
+  <!-- 안내 대화상자: 아직 구현되지 않은 기능, 오류 안내 -->
   <dialog id="noticeDialog" aria-labelledby="noticeTitle">
     <form method="dialog">
       <h2 id="noticeTitle"></h2>
@@ -345,41 +381,41 @@ a.card { display: flex; }
  * access   : "free"(무료) | "premium"(프리미엄)
  */
 window.SAMPLE_WORKS = [
-  { id: "w01", title: "성산별곡", author: "정철", era: "조선 전기", genre: "가사", category: "classic",
+  { id: "seongsan-byeolgok", title: "성산별곡", author: "정철", era: "조선 전기", genre: "가사", category: "classic",
     access: "premium", price: 3000, exam: true, popularity: 98, createdAt: "2026-11-10",
     summary: "성산의 자연 속 삶과 임금에 대한 그리움을 함께 노래한 가사 작품." },
-  { id: "w02", title: "탄궁가", author: "박인로", era: "조선 후기", genre: "가사", category: "classic",
+  { id: "tangungga", title: "탄궁가", author: "박인로", era: "조선 후기", genre: "가사", category: "classic",
     access: "premium", price: 3000, exam: true, popularity: 95, createdAt: "2026-11-09",
     summary: "궁핍한 생활 속에서도 안분지족의 자세를 드러내는 가사 작품." },
-  { id: "w03", title: "관동별곡", author: "정철", era: "조선 전기", genre: "가사", category: "classic",
+  { id: "gwandong-byeolgok", title: "관동별곡", author: "정철", era: "조선 전기", genre: "가사", category: "classic",
     access: "free", price: 0, exam: false, popularity: 90, createdAt: "2026-11-05",
     summary: "관동 지방의 명승을 유람하며 느낀 감흥과 선정(善政)의 포부를 담은 기행 가사." },
-  { id: "w04", title: "사미인곡", author: "정철", era: "조선 전기", genre: "가사", category: "classic",
+  { id: "samiingok", title: "사미인곡", author: "정철", era: "조선 전기", genre: "가사", category: "classic",
     access: "premium", price: 3000, exam: true, popularity: 88, createdAt: "2026-11-02",
     summary: "임금을 향한 그리움을 임을 그리는 여인의 목소리로 표현한 작품." },
-  { id: "w05", title: "누항사", author: "박인로", era: "조선 후기", genre: "가사", category: "classic",
+  { id: "nuhangsa", title: "누항사", author: "박인로", era: "조선 후기", genre: "가사", category: "classic",
     access: "premium", price: 3000, exam: false, popularity: 80, createdAt: "2026-10-28",
     summary: "가난한 선비의 현실 고민과 안빈낙도의 다짐을 그린 가사." },
-  { id: "w06", title: "규원가", author: "허난설헌(전승)", era: "조선 중기", genre: "가사", category: "classic",
+  { id: "gyuwonga", title: "규원가", author: "허난설헌(전승)", era: "조선 중기", genre: "가사", category: "classic",
     access: "free", price: 0, exam: false, popularity: 72, createdAt: "2026-10-20",
     summary: "규방 여인의 외로움과 원망을 노래한 규방 가사." },
 
-  { id: "w07", title: "진달래꽃", author: "김소월", era: "1920년대", genre: "현대시", category: "modern",
+  { id: "jindallaekkot", title: "진달래꽃", author: "김소월", era: "1920년대", genre: "현대시", category: "modern",
     access: "free", price: 0, exam: false, popularity: 92, createdAt: "2026-11-08",
     summary: "이별의 상황에서 슬픔을 절제하는 화자의 태도가 핵심인 서정시." },
-  { id: "w08", title: "서시", author: "윤동주", era: "1940년대", genre: "현대시", category: "modern",
+  { id: "seosi", title: "서시", author: "윤동주", era: "1940년대", genre: "현대시", category: "modern",
     access: "premium", price: 2500, exam: true, popularity: 89, createdAt: "2026-11-06",
     summary: "부끄러움 없는 삶을 향한 성찰과 다짐을 담은 시." },
-  { id: "w09", title: "향수", author: "정지용", era: "1920년대", genre: "현대시", category: "modern",
+  { id: "hyangsu", title: "향수", author: "정지용", era: "1920년대", genre: "현대시", category: "modern",
     access: "premium", price: 2500, exam: false, popularity: 76, createdAt: "2026-10-30",
     summary: "고향에 대한 그리움을 감각적 이미지로 형상화한 시." },
-  { id: "w10", title: "메밀꽃 필 무렵", author: "이효석", era: "1930년대", genre: "현대소설", category: "modern",
+  { id: "memilkkot-pil-muryeop", title: "메밀꽃 필 무렵", author: "이효석", era: "1930년대", genre: "현대소설", category: "modern",
     access: "premium", price: 3500, exam: true, popularity: 94, createdAt: "2026-11-11",
     summary: "장터길 서사와 서정적 묘사가 어우러진 단편소설." },
-  { id: "w11", title: "운수 좋은 날", author: "현진건", era: "1920년대", genre: "현대소설", category: "modern",
+  { id: "unsu-joeun-nal", title: "운수 좋은 날", author: "현진건", era: "1920년대", genre: "현대소설", category: "modern",
     access: "free", price: 0, exam: false, popularity: 84, createdAt: "2026-10-25",
     summary: "반어적 제목과 상황의 아이러니가 두드러지는 단편소설." },
-  { id: "w12", title: "사평역에서", author: "곽재구", era: "1980년대", genre: "현대시", category: "modern",
+  { id: "sapyeongyeoge-seo", title: "사평역에서", author: "곽재구", era: "1980년대", genre: "현대시", category: "modern",
     access: "premium", price: 2500, exam: true, popularity: 78, createdAt: "2026-10-18",
     summary: "기차를 기다리는 사람들의 정서를 겨울 밤 풍경으로 그린 시." }
 ];
@@ -413,10 +449,10 @@ window.SECTIONS = [
  */
 window.PREVIEW_KEYS = ["info", "author", "background", "theme"];
 
-/* 상세 분석 샘플: w07(무료, 14개 항목 전체) / w01(프리미엄, 미리보기 항목만) */
+/* 상세 분석 샘플: jindallaekkot(무료, 14개 항목 전체) / seongsan-byeolgok(프리미엄, 미리보기 항목만) */
 window.SAMPLE_DETAILS = {
 
-  w07: {
+  "jindallaekkot": {
     info: [
       ["작품명", "진달래꽃"],
       ["작가", "김소월"],
@@ -489,15 +525,15 @@ window.SAMPLE_DETAILS = {
       "'즈려밟고', '아름' 등 시어의 의미를 묻는 어휘 문제"
     ],
     choices: [
-      { t: "수미상관의 구조를 활용하여 화자의 정서를 강조하고 있다.", ok: true,
+      { tag: "예시(실제 기출 아님)", t: "수미상관의 구조를 활용하여 화자의 정서를 강조하고 있다.", ok: true,
         why: "1연과 4연이 비슷한 구조로 반복되며 이별의 정서를 강조하므로 적절합니다." },
-      { t: "자연물을 통해 이별에 대한 화자의 마음을 간접적으로 드러내고 있다.", ok: true,
+      { tag: "예시(실제 기출 아님)", t: "자연물을 통해 이별에 대한 화자의 마음을 간접적으로 드러내고 있다.", ok: true,
         why: "진달래꽃을 뿌리고 밟게 하는 행위로 화자의 사랑과 슬픔이 드러나므로 적절합니다." },
-      { t: "공간의 이동에 따라 화자의 정서가 변화하고 있다.", ok: false,
+      { tag: "예시(실제 기출 아님)", t: "공간의 이동에 따라 화자의 정서가 변화하고 있다.", ok: false,
         why: "'영변에 약산'은 배경 제시이며 화자가 이동하지 않습니다. 공간 이동에 따른 시상 전개가 아니므로 오답입니다." },
-      { t: "화자는 임에 대한 원망을 점차 냉소적으로 표출하고 있다.", ok: false,
+      { tag: "예시(실제 기출 아님)", t: "화자는 임에 대한 원망을 점차 냉소적으로 표출하고 있다.", ok: false,
         why: "화자는 끝까지 임을 존대하고 축복하는 태도를 유지합니다. 냉소적 표출이라는 판단은 근거가 없어 오답입니다." },
-      { t: "명령형 어미를 반복하여 청자의 행동을 강하게 요구하고 있다.", ok: false,
+      { tag: "예시(실제 기출 아님)", t: "명령형 어미를 반복하여 청자의 행동을 강하게 요구하고 있다.", ok: false,
         why: "'-오리다'는 화자의 의지를 나타내는 어미이고, '가시옵소서'는 높임의 기원이어서 강하게 요구하는 어조가 아닙니다. 오답입니다." }
     ],
     compare: [
@@ -516,7 +552,7 @@ window.SAMPLE_DETAILS = {
   },
 
   /* 프리미엄 샘플: 미리보기 항목(PREVIEW_KEYS)만 존재. 나머지 항목의 내용은 이 페이지에 없음. */
-  w01: {
+  "seongsan-byeolgok": {
     info: [
       ["작품명", "성산별곡"],
       ["작가", "정철"],
@@ -541,14 +577,13 @@ window.SAMPLE_DETAILS = {
 
 </script>
   <script>
-/* 문학연구소 · 3단계: 해시 라우터 + 목록 + 상세 분석 (순수 JavaScript) */
+/* 문학연구소 · 4단계: Supabase 연결 + 해시 라우터 + 목록/상세 + PDF (순수 JavaScript) */
 (function () {
   "use strict";
 
-  var WORKS = window.SAMPLE_WORKS || [];
+  var CFG = window.MUNHAK_CONFIG || {};
   var SECTIONS = window.SECTIONS || [];
-  var DETAILS = window.SAMPLE_DETAILS || {};
-  var PREVIEW = window.PREVIEW_KEYS || [];
+  var WORKS = [];
 
   function $(id) { return document.getElementById(id); }
   function esc(s) {
@@ -556,10 +591,95 @@ window.SAMPLE_DETAILS = {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
+
+  /* =====================================================================
+     1. 데이터 계층: 'sample'(샘플) / 'db'(Supabase) / 'error'(설정 오류)
+     ===================================================================== */
+  var MODE = "sample", sb = null, CONFIG_ERROR = "";
+
+  (function initClient() {
+    var url = String(CFG.SUPABASE_URL || "").trim();
+    var key = String(CFG.SUPABASE_ANON_KEY || "").trim();
+    if (!url || !key || /YOUR_/.test(url) || /YOUR_/.test(key)) return;   // 샘플 모드
+
+    if (!/^https:\/\/[^\s]+$/.test(url)) {
+      MODE = "error"; CONFIG_ERROR = "SUPABASE_URL 형식이 올바르지 않습니다. https://xxxx.supabase.co 형태여야 합니다."; return;
+    }
+    // 비밀 키(service_role / secret)가 들어가면 즉시 차단: 이 키는 브라우저에 노출되면 안 됨
+    var secret = /^sb_secret_/.test(key);
+    if (!secret && /^eyJ/.test(key)) {
+      try {
+        var payload = JSON.parse(atob(key.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+        if (payload && payload.role === "service_role") secret = true;
+      } catch (e) { /* 해석 실패는 무시 */ }
+    }
+    if (secret) {
+      MODE = "error";
+      CONFIG_ERROR = "비밀 키(service_role/secret)가 설정되어 있습니다. 브라우저에 노출되면 안 되는 키이므로 사용을 막았습니다. anon(public) 또는 publishable 키로 바꾸고, 노출된 비밀 키는 Supabase에서 재발급하세요.";
+      return;
+    }
+    if (!window.supabase || !window.supabase.createClient) {
+      MODE = "error"; CONFIG_ERROR = "Supabase 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해 주세요."; return;
+    }
+    try { sb = window.supabase.createClient(url, key); MODE = "db"; }
+    catch (e) { MODE = "error"; CONFIG_ERROR = "Supabase 연결 설정 오류: " + e.message; }
+  })();
+
+  function mapRow(r) {
+    return {
+      uuid: r.id, id: r.slug, title: r.title, author: r.author, era: r.era || "", genre: r.genre || "",
+      category: (r.categories && r.categories.slug) || "classic",
+      summary: r.summary || "", access: r.access, price: r.price || 0, exam: !!r.is_exam,
+      popularity: r.popularity || 0, createdAt: String(r.created_at || "").slice(0, 10)
+    };
+  }
+
+  var worksPromise = null;
+  function ensureWorks() {
+    if (worksPromise) return worksPromise;
+    if (MODE === "sample") {
+      WORKS = (window.SAMPLE_WORKS || []).slice();
+      worksPromise = Promise.resolve(WORKS);
+    } else if (MODE === "error") {
+      worksPromise = Promise.reject(new Error(CONFIG_ERROR));
+    } else {
+      worksPromise = sb.from("works")
+        .select("id,slug,title,author,era,genre,summary,access,price,is_exam,popularity,created_at,categories(slug)")
+        .eq("is_published", true)
+        .then(function (res) {
+          if (res.error) throw new Error(res.error.message);
+          WORKS = (res.data || []).map(mapRow);
+          return WORKS;
+        });
+    }
+    worksPromise.then(null, function () { worksPromise = null; });   // 실패하면 다음에 다시 시도
+    return worksPromise;
+  }
+
+  function loadDetail(w) {
+    if (MODE === "sample") {
+      return Promise.resolve({ d: (window.SAMPLE_DETAILS || {})[w.id] || {}, files: [] });
+    }
+    return Promise.all([
+      sb.from("analyses").select("section_key,body").eq("work_id", w.uuid),
+      sb.from("work_files").select("id,file_name,storage_path").eq("work_id", w.uuid)
+    ]).then(function (r) {
+      if (r[0].error) throw new Error(r[0].error.message);
+      if (r[1].error) throw new Error(r[1].error.message);
+      var d = {};
+      (r[0].data || []).forEach(function (x) { d[x.section_key] = x.body; });
+      return { d: d, files: r[1].data || [] };
+    });
+  }
+
   function findWork(id) {
     for (var i = 0; i < WORKS.length; i++) if (WORKS[i].id === id) return WORKS[i];
     return null;
   }
+
+  /* =====================================================================
+     2. 공통 화면 조각
+     ===================================================================== */
   function priceText(w) { return w.access === "free" ? "무료" : w.price.toLocaleString("ko-KR") + "원"; }
   function badge(w) {
     return w.access === "free"
@@ -569,8 +689,8 @@ window.SAMPLE_DETAILS = {
   function byDateDesc(a, b) { return a.createdAt < b.createdAt ? 1 : -1; }
   function byPopDesc(a, b) { return b.popularity - a.popularity; }
 
-  /* ---------- 공통 조각 ---------- */
   function cardHTML(w) {
+    var foot = MODE === "sample" ? (((window.SAMPLE_DETAILS || {})[w.id]) ? "분석 자료 보기" : "분석 준비 중") : "분석 자료 보기";
     return '<a class="card" href="#/work/' + esc(w.id) + '">' +
       '<div class="card-top">' + badge(w) +
         '<span class="badge badge-tag">' + esc(w.genre) + '</span>' +
@@ -579,8 +699,7 @@ window.SAMPLE_DETAILS = {
       '<div class="card-title">' + esc(w.title) + '</div>' +
       '<div class="card-meta">' + esc(w.author) + ' · ' + esc(w.era) + '</div>' +
       '<p class="card-sum">' + esc(w.summary) + '</p>' +
-      '<div class="card-foot"><span>' + (DETAILS[w.id] ? "분석 자료 보기" : "분석 준비 중") +
-      '</span><span class="price">' + esc(priceText(w)) + '</span></div>' +
+      '<div class="card-foot"><span>' + foot + '</span><span class="price">' + esc(priceText(w)) + '</span></div>' +
     '</a>';
   }
   function rankHTML(w, i) {
@@ -590,15 +709,30 @@ window.SAMPLE_DETAILS = {
       '<span class="rank-meta">' + esc(w.author) + ' · ' + esc(w.genre) + '</span></span>' +
       badge(w) + '</a></li>';
   }
-  function gridHTML(list) { return '<div class="grid">' + list.map(cardHTML).join("") + '</div>'; }
+  function gridHTML(list) {
+    return list.length ? '<div class="grid">' + list.map(cardHTML).join("") + '</div>' : '<p class="empty">등록된 작품이 없습니다.</p>';
+  }
   function sectionBlock(id, title, bodyHTML, moreHref) {
     return '<section class="block" id="' + id + '"><div class="wrap"><div class="block-head"><h2>' + title + '</h2>' +
       (moreHref ? '<a class="link-btn" href="' + moreHref + '">전체 보기</a>' : "") +
       '</div>' + bodyHTML + '</div></section>';
   }
-  var SAMPLE_NOTE = '<div class="wrap"><p class="sample-note" role="note">현재 화면의 작품과 분석 내용은 <strong>개발 확인용 샘플</strong>입니다. 4단계에서 Supabase 데이터베이스로 교체됩니다.</p></div>';
+  function sampleNote() {
+    return MODE === "sample"
+      ? '<div class="wrap"><p class="sample-note" role="note"><strong>샘플 모드</strong> — Supabase 설정 전이라 개발 확인용 샘플 데이터를 보여 줍니다. index.html 상단의 설정 값을 넣으면 데이터베이스에서 불러옵니다.</p></div>'
+      : "";
+  }
+  function loadingHTML() { return '<div class="wrap"><p class="empty">불러오는 중…</p></div>'; }
+  function errorHTML(msg) {
+    return '<section class="page-top"><div class="wrap"><h1 class="page-title">데이터를 불러오지 못했습니다</h1>' +
+      '<p class="err">' + esc(msg) + '</p>' +
+      '<p class="fine">확인할 것: ① index.html 설정 값(URL, 키)이 맞는지 ② schema.sql / seed.sql 을 실행했는지 ③ 인터넷 연결</p>' +
+      '<p><button type="button" class="btn btn-solid" data-retry="1">다시 시도</button></p></div></section>';
+  }
 
-  /* ---------- 홈 ---------- */
+  /* =====================================================================
+     3. 홈
+     ===================================================================== */
   function renderHome() {
     var cnt = function (f) { return WORKS.filter(f).length + "개 작품"; };
     var html =
@@ -611,7 +745,7 @@ window.SAMPLE_DETAILS = {
           '<input id="homeQ" type="search" placeholder="작품명, 작가명, 시대, 갈래로 검색 (예: 성산별곡, 정철, 가사)">' +
           '<button type="submit" class="btn btn-solid">검색</button>' +
         '</form>' +
-      '</div></section>' + SAMPLE_NOTE +
+      '</div></section>' + sampleNote() +
 
       sectionBlock("categories", "분류별 보기",
         '<div class="cat-cards">' +
@@ -646,7 +780,9 @@ window.SAMPLE_DETAILS = {
     document.title = "문학연구소 · 수능 문학 분석 플랫폼";
   }
 
-  /* ---------- 목록 ---------- */
+  /* =====================================================================
+     4. 목록
+     ===================================================================== */
   var listState = { q: "", cat: "all", access: "all", exam: false };
 
   function matches(w) {
@@ -658,13 +794,11 @@ window.SAMPLE_DETAILS = {
     var hay = (w.title + w.author + w.era + w.genre).replace(/\s+/g, "").toLowerCase();
     return hay.indexOf(q) !== -1;
   }
-
   function chipRow(label, attr, items, current) {
     return '<div class="chips" role="group" aria-label="' + label + '">' + items.map(function (it) {
       return '<button type="button" class="chip' + (current === it[0] ? " is-on" : "") + '" ' + attr + '="' + it[0] + '">' + it[1] + '</button>';
     }).join("") + '</div>';
   }
-
   function syncUrl() {
     var p = [];
     if (listState.q) p.push("q=" + encodeURIComponent(listState.q));
@@ -673,7 +807,6 @@ window.SAMPLE_DETAILS = {
     if (listState.exam) p.push("exam=1");
     history.replaceState(null, "", "#/works" + (p.length ? "?" + p.join("&") : ""));
   }
-
   function updateList() {
     var list = WORKS.filter(matches).sort(byPopDesc);
     $("listCount").textContent = list.length + "건";
@@ -684,7 +817,6 @@ window.SAMPLE_DETAILS = {
     $("examChip").classList.toggle("is-on", listState.exam);
     syncUrl();
   }
-
   function renderList(qs) {
     listState = {
       q: qs.get("q") || "",
@@ -702,7 +834,7 @@ window.SAMPLE_DETAILS = {
         '</form>' +
         '<div class="filters"><div id="catChips"></div><div id="accessChips"></div>' +
           '<div class="chips"><button type="button" class="chip" id="examChip">기출 분석만</button></div></div>' +
-      '</div></section>' + SAMPLE_NOTE +
+      '</div></section>' + sampleNote() +
       '<section class="block"><div class="wrap"><div class="grid" id="listGrid"></div>' +
         '<p class="empty" id="listEmpty" hidden>조건에 맞는 작품이 없습니다. 다른 검색어를 입력해 보세요.</p>' +
         '<p class="reset-row"><button type="button" class="link-btn" id="listReset">검색 초기화</button></p>' +
@@ -728,7 +860,9 @@ window.SAMPLE_DETAILS = {
     document.title = "작품 목록 · 문학연구소";
   }
 
-  /* ---------- 상세: 항목별 렌더러 ---------- */
+  /* =====================================================================
+     5. 상세: 항목별 렌더러 (데이터 형태는 schema.sql 의 analyses.body 와 동일)
+     ===================================================================== */
   function paras(arr) { return arr.map(function (t) { return "<p>" + esc(t) + "</p>"; }).join(""); }
   function bullets(arr) { return '<ul class="bul">' + arr.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ul>"; }
 
@@ -738,13 +872,10 @@ window.SAMPLE_DETAILS = {
         return "<div><dt>" + esc(r[0]) + "</dt><dd>" + esc(r[1]) + "</dd></div>";
       }).join("") + "</dl>";
     },
-    author: paras,
-    background: paras,
-    attitude: paras,
-    theme: paras,
+    author: paras, background: paras, attitude: paras, theme: paras,
     original: function (d) {
       return '<div class="poem">' + d.map(function (st) {
-        return '<p class="stanza">' + st.map(esc).join("<br>") + "</p>";
+        return '<p class="stanza">' + st.map(function (l) { return esc(l); }).join("<br>") + "</p>";
       }).join("") + "</div>";
     },
     modern: function (d) {
@@ -753,52 +884,41 @@ window.SAMPLE_DETAILS = {
         "</tbody></table></div>";
     },
     analysis: function (d) {
-      return d.map(function (r) {
-        return '<div class="ana"><h4>' + esc(r.q) + "</h4><p>" + esc(r.a) + "</p></div>";
-      }).join("");
+      return d.map(function (r) { return '<div class="ana"><h4>' + esc(r.q) + "</h4><p>" + esc(r.a) + "</p></div>"; }).join("");
     },
     structure: function (d) {
       return '<ol class="steps">' + d.map(function (r) {
         return "<li><strong>" + esc(r.part) + "</strong><span>" + esc(r.desc) + "</span></li>";
       }).join("") + "</ol>";
     },
-    expression: bullets,
-    points: bullets,
-    summary: bullets,
+    expression: bullets, points: bullets, summary: bullets,
     choices: function (d) {
-      return '<p class="fine">아래 선지는 학습용으로 만든 예시이며 실제 기출 문항이 아닙니다.</p>' +
-        d.map(function (c, i) {
-          return '<div class="choice ' + (c.ok ? "ok" : "no") + '"><div class="choice-head"><span class="mark">' +
-            (c.ok ? "적절함" : "적절하지 않음") + '</span><span class="choice-no">선지 ' + (i + 1) + "</span></div>" +
-            "<p class=\"choice-text\">" + esc(c.t) + "</p><p class=\"choice-why\">" + esc(c.why) + "</p></div>";
-        }).join("");
+      return d.map(function (c, i) {
+        return '<div class="choice ' + (c.ok ? "ok" : "no") + '"><div class="choice-head"><span class="mark">' +
+          (c.ok ? "적절함" : "적절하지 않음") + '</span><span class="choice-no">선지 ' + (i + 1) + "</span>" +
+          (c.tag ? '<span class="badge badge-tag">' + esc(c.tag) + "</span>" : "") + "</div>" +
+          '<p class="choice-text">' + esc(c.t) + '</p><p class="choice-why">' + esc(c.why) + "</p></div>";
+      }).join("");
     },
     compare: function (d) {
-      return d.map(function (r) {
-        return '<div class="ana"><h4>' + esc(r.work) + "</h4><p>" + esc(r.text) + "</p></div>";
-      }).join("");
+      return d.map(function (r) { return '<div class="ana"><h4>' + esc(r.work) + "</h4><p>" + esc(r.text) + "</p></div>"; }).join("");
     }
   };
 
-  function lockedBox(work) {
+  function renderSection(key, data) {
+    try { return RENDERERS[key](data); }
+    catch (e) { return '<div class="lock lock-soft"><p>이 항목의 데이터 형식이 올바르지 않아 표시할 수 없습니다.</p></div>'; }
+  }
+  function lockedBox() {
     return '<div class="lock"><span class="badge badge-premium">프리미엄</span>' +
-      "<p>이 항목은 프리미엄 자료입니다. 구매와 열람 권한 확인은 7~8단계에서 서버(DB 권한 정책)로 구현됩니다.</p></div>";
+      "<p>이 항목은 프리미엄 자료입니다. 구매 후 열람할 수 있습니다. (구매 기능은 8단계에서 제공됩니다.)</p></div>";
   }
-  function pendingBox() {
-    return '<div class="lock lock-soft"><p>이 항목의 분석 자료는 아직 등록되지 않았습니다.</p></div>';
-  }
+  function pendingBox() { return '<div class="lock lock-soft"><p>이 항목의 분석 자료는 아직 등록되지 않았습니다.</p></div>'; }
 
-  /* ---------- 상세 ---------- */
-  function renderDetail(id) {
-    var w = findWork(id);
-    if (!w) {
-      $("view").innerHTML = '<section class="page-top"><div class="wrap"><nav class="crumbs"><a href="#/">홈</a><span>작품 없음</span></nav>' +
-        '<h1 class="page-title">작품을 찾을 수 없습니다</h1><p class="lead"><a class="link-btn" href="#/works">작품 목록으로 이동</a></p></div></section>';
-      document.title = "작품을 찾을 수 없음 · 문학연구소";
-      return;
-    }
-    var d = DETAILS[id] || {};
+  function renderDetail(w, detail) {
+    var d = detail.d, files = detail.files;
     var premium = w.access === "premium";
+    var missing = SECTIONS.filter(function (s) { return d[s.key] === undefined; }).length;
 
     var toc = SECTIONS.map(function (s, i) {
       var open = d[s.key] !== undefined;
@@ -807,23 +927,29 @@ window.SAMPLE_DETAILS = {
     }).join("");
 
     var body = SECTIONS.map(function (s, i) {
-      var content;
-      if (d[s.key] !== undefined) content = RENDERERS[s.key](d[s.key]);
-      else content = premium ? lockedBox(w) : pendingBox();
+      var content = d[s.key] !== undefined ? renderSection(s.key, d[s.key]) : (premium ? lockedBox() : pendingBox());
       return '<section class="sec" id="sec-' + s.key + '"><h2><span class="sec-no">' + (i + 1) + "</span>" + esc(s.title) + "</h2>" + content + "</section>";
     }).join("");
 
     var buy = premium
-      ? '<div class="buy"><span class="price big">' + esc(priceText(w)) + '</span>' +
-        '<button type="button" class="btn btn-solid" data-notice="buy">구매하기</button></div>'
+      ? '<div class="buy"><span class="price big">' + esc(priceText(w)) + '</span><button type="button" class="btn btn-solid" data-notice="buy">구매하기</button></div>'
       : '<div class="buy"><span class="price big">무료</span></div>';
 
-    var hasAny = Object.keys(d).length > 0;
-    var notice = !hasAny
-      ? '<p class="sample-note">이 작품의 상세 분석은 아직 등록되지 않았습니다. 상세 화면 구성은 「진달래꽃」(무료)과 「성산별곡」(프리미엄)에서 확인할 수 있습니다.</p>'
-      : premium
-        ? '<p class="sample-note">프리미엄 작품입니다. 미리보기 항목만 공개되며, 나머지 항목은 구매 후 열람 기능(7~8단계) 구현 전까지 제공되지 않습니다.</p>'
-        : "";
+    var fileBtns = files.map(function (f) {
+      return '<button type="button" class="btn btn-ghost" data-file="' + esc(f.storage_path) + '" data-name="' + esc(f.file_name) + '">PDF 다운로드 · ' + esc(f.file_name) + "</button>";
+    }).join("");
+    var fileHint = (MODE === "db" && premium && !files.length)
+      ? '<span class="muted">등록된 PDF가 없거나, 구매 후 이용할 수 있습니다.</span>' : "";
+    var actions = '<div class="work-actions"><button type="button" class="btn btn-ghost" data-print="1">PDF로 저장 (인쇄)</button>' +
+      fileBtns + fileHint + "</div>";
+
+    var notice = "";
+    if (missing === SECTIONS.length) {
+      notice = '<p class="sample-note">이 작품의 상세 분석은 아직 등록되지 않았습니다.' +
+        (MODE === "sample" ? " 상세 화면 구성은 「진달래꽃」(무료)과 「성산별곡」(프리미엄)에서 확인할 수 있습니다." : "") + "</p>";
+    } else if (premium && missing > 0) {
+      notice = '<p class="sample-note">프리미엄 작품입니다. 구매 전에는 미리보기 항목만 공개되며, 나머지 항목은 구매 후 열람할 수 있습니다.</p>';
+    }
 
     $("view").innerHTML =
       '<section class="page-top"><div class="wrap">' +
@@ -833,57 +959,109 @@ window.SAMPLE_DETAILS = {
             (w.exam ? '<span class="badge badge-tag">기출</span>' : "") + "</div>" +
           '<h1 class="page-title">' + esc(w.title) + "</h1>" +
           '<p class="card-meta">' + esc(w.author) + " · " + esc(w.era) + "</p>" +
-          '<p class="lead">' + esc(w.summary) + "</p></div>" + buy + "</div>" +
+          '<p class="lead">' + esc(w.summary) + "</p></div>" + buy + "</div>" + actions +
       "</div></section>" +
       '<div class="wrap">' + notice + "</div>" +
       '<div class="wrap detail-layout"><aside class="toc" aria-label="목차"><h3>목차</h3><ol>' + toc + "</ol></aside>" +
-      '<div class="detail-body">' + body + "</div></div>";
+      '<div class="detail-body">' + body +
+        '<p class="print-only">문학연구소 · 개인 학습용 자료입니다. 무단 복제·배포를 금합니다. (출력일 ' + new Date().toLocaleDateString("ko-KR") + ")</p></div></div>";
     document.title = w.title + " 분석 · 문학연구소";
   }
 
-  /* ---------- 안내창 ---------- */
+  /* =====================================================================
+     6. 안내창 / 파일 다운로드 / 인쇄
+     ===================================================================== */
   var NOTICES = {
     login:  { t: "로그인", b: "로그인은 5단계에서 Supabase Auth로 구현됩니다. 아직 사용할 수 없습니다." },
     signup: { t: "회원가입", b: "회원가입은 5단계에서 Supabase Auth로 구현됩니다. 아직 사용할 수 없습니다." },
     buy:    { t: "구매하기", b: "결제는 8단계에서 구현됩니다. PG사 계약과 API 키가 준비되기 전에는 테스트 모드로만 만들 수 있으며, 지금은 구매할 수 없습니다." }
   };
-  function showNotice(key) {
-    var n = NOTICES[key]; if (!n) return;
-    $("noticeTitle").textContent = n.t;
-    $("noticeBody").textContent = n.b;
+  function showMessage(t, b) {
+    $("noticeTitle").textContent = t;
+    $("noticeBody").textContent = b;
     var dlg = $("noticeDialog");
-    if (typeof dlg.showModal === "function") dlg.showModal(); else alert(n.t + "\n\n" + n.b);
+    if (typeof dlg.showModal === "function") dlg.showModal(); else alert(t + "\n\n" + b);
   }
 
-  /* ---------- 라우터 ---------- */
+  function downloadFile(btn) {
+    if (MODE !== "db") return;
+    var path = btn.getAttribute("data-file"), name = btn.getAttribute("data-name");
+    btn.disabled = true;
+    sb.storage.from("work-files").createSignedUrl(path, 60, { download: name }).then(function (r) {
+      btn.disabled = false;
+      if (r.error || !r.data || !r.data.signedUrl) {
+        showMessage("PDF를 내려받을 수 없습니다", "열람 권한이 없거나 파일을 찾을 수 없습니다. (" + ((r.error && r.error.message) || "알 수 없는 오류") + ")");
+        return;
+      }
+      var a = document.createElement("a");
+      a.href = r.data.signedUrl; a.rel = "noopener";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }, function (err) {
+      btn.disabled = false;
+      showMessage("PDF를 내려받을 수 없습니다", String(err && err.message || err));
+    });
+  }
+
+  /* =====================================================================
+     7. 라우터 (비동기: 데이터가 올 때까지 '불러오는 중' 표시)
+     ===================================================================== */
+  var token = 0;
+
   function route() {
+    var my = ++token;
     var h = location.hash.replace(/^#/, "") || "/";
     var parts = h.split("?");
     var path = parts[0];
     var qs = new URLSearchParams(parts[1] || "");
-    var m;
+    var m = path.match(/^\/work\/([A-Za-z0-9_-]+)$/);
 
-    if (path === "/works") renderList(qs);
-    else if ((m = path.match(/^\/work\/([A-Za-z0-9_-]+)$/))) renderDetail(m[1]);
-    else renderHome();
+    if (!worksPromise) $("view").innerHTML = loadingHTML();
 
-    if (path === "/plans") {
-      var p = $("plans"); if (p) p.scrollIntoView();
-    } else {
-      window.scrollTo(0, 0);
-    }
+    ensureWorks().then(function () {
+      if (my !== token) return;
+      if (path === "/works") { renderList(qs); window.scrollTo(0, 0); }
+      else if (m) {
+        var w = findWork(m[1]);
+        if (!w) {
+          $("view").innerHTML = '<section class="page-top"><div class="wrap"><nav class="crumbs"><a href="#/">홈</a><span>작품 없음</span></nav>' +
+            '<h1 class="page-title">작품을 찾을 수 없습니다</h1><p><a class="link-btn" href="#/works">작품 목록으로 이동</a></p></div></section>';
+          document.title = "작품을 찾을 수 없음 · 문학연구소";
+          window.scrollTo(0, 0);
+          return;
+        }
+        $("view").innerHTML = loadingHTML();
+        return loadDetail(w).then(function (detail) {
+          if (my !== token) return;
+          renderDetail(w, detail);
+          window.scrollTo(0, 0);
+        });
+      } else {
+        renderHome();
+        if (path === "/plans") { var p = $("plans"); if (p) p.scrollIntoView(); } else window.scrollTo(0, 0);
+      }
+    }).then(null, function (err) {
+      if (my !== token) return;
+      $("view").innerHTML = errorHTML(err && err.message ? err.message : String(err));
+    });
+  }
+
+  function setModeLabel() {
+    $("modeLabel").textContent = MODE === "db" ? "· 데이터: Supabase 연결됨" : MODE === "error" ? "· 데이터: 설정 오류" : "· 데이터: 샘플 모드";
   }
 
   document.addEventListener("click", function (e) {
     var n = e.target.closest("[data-notice]");
-    if (n) { showNotice(n.getAttribute("data-notice")); return; }
+    if (n) { var k = NOTICES[n.getAttribute("data-notice")]; if (k) showMessage(k.t, k.b); return; }
     var j = e.target.closest("[data-jump]");
-    if (j) {
-      var el = $(j.getAttribute("data-jump"));
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    if (j) { var el = $(j.getAttribute("data-jump")); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+    var f = e.target.closest("[data-file]");
+    if (f) { downloadFile(f); return; }
+    if (e.target.closest("[data-print]")) { window.print(); return; }
+    if (e.target.closest("[data-retry]")) { worksPromise = null; route(); }
   });
   window.addEventListener("hashchange", route);
+
+  setModeLabel();
   route();
 })();
 
