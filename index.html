@@ -410,6 +410,13 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; }
   .adm-box { padding: 14px; }
 }
 
+/* ===== 8단계: 결제 대화상자 ===== */
+#payDialog label { font-size: 14px; font-weight: 600; }
+#payDialog input { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); font: inherit; font-size: 16px; }
+.pay-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+#payDialog .pay-actions .btn { align-self: auto; }
+#payDialog .form-msg:empty { display: none; }
+
 </style>
 
   <!-- =====================================================================
@@ -421,8 +428,8 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; }
        ===================================================================== -->
   <script>
     window.MUNHAK_CONFIG = {
-      SUPABASE_URL: "https://qwsjjkhgfnypuzvxgoec.supabase.co",
-      SUPABASE_ANON_KEY: "sb_publishable_pZmVLiE7pDBWhCPdZEtwTA_j9JmcN3H"
+      SUPABASE_URL: "YOUR_SUPABASE_URL",
+      SUPABASE_ANON_KEY: "YOUR_SUPABASE_ANON_KEY"
     };
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -463,6 +470,22 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; }
       <h2 id="noticeTitle"></h2>
       <p id="noticeBody"></p>
       <button class="btn btn-solid" value="close">확인</button>
+    </form>
+  </dialog>
+
+  <!-- 결제 대화상자 (페이앱) -->
+  <dialog id="payDialog" aria-labelledby="payHead">
+    <form id="payForm" method="dialog">
+      <h2 id="payHead">구매하기</h2>
+      <p id="payTitle"></p>
+      <label for="payPhone">휴대폰 번호 (결제 처리용)</label>
+      <input id="payPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="010-1234-5678">
+      <p class="fine">휴대폰 번호는 결제 요청을 위해 결제 대행사(페이앱)에만 전달되며 이 사이트에 저장하지 않습니다. 결제 후에는 환불 규정에 따라 처리됩니다.</p>
+      <p class="form-msg is-error" id="payMsg" role="alert"></p>
+      <div class="pay-actions">
+        <button type="submit" class="btn btn-solid" id="payGo">결제창으로 이동</button>
+        <button type="button" class="btn btn-ghost" onclick="document.getElementById('payDialog').close()">취소</button>
+      </div>
     </form>
   </dialog>
 
@@ -1645,7 +1668,7 @@ window.SAMPLE_DETAILS = {
       '<div class="detail-body">' + body +
         '<p class="print-only">문학연구소 · 개인 학습용 자료입니다. 무단 복제·배포를 금합니다. (출력일 ' + new Date().toLocaleDateString("ko-KR") + ")</p></div></div>";
     document.title = w.title + " 분석 · 문학연구소";
-    if ($("payNote")) getPayMode().then(function (m) { var n = $("payNote"); if (n) n.textContent = m === "test" ? "테스트 결제 모드 (실제 청구 없음)" : m === "off" ? "결제 준비 중" : ""; });
+    if ($("payNote")) getPayMode().then(function (m) { var n = $("payNote"); if (n) n.textContent = m === "test" ? "테스트 결제 모드 (실제 청구 없음)" : m === "payapp" ? "카드 등 결제 (페이앱)" : "결제 준비 중"; });
   }
 
   /* =====================================================================
@@ -1971,11 +1994,63 @@ window.SAMPLE_DETAILS = {
     login: "로그인이 필요합니다.", mode_off: "지금은 결제를 받지 않습니다. (결제 기능 준비 중)",
     no_work: "구매할 수 없는 작품입니다.", already: "이미 구매한 작품입니다."
   };
+  var PAY_ERR = {
+    login: "로그인이 필요합니다. 다시 로그인해 주세요.", bad_phone: "휴대폰 번호 형식이 올바르지 않습니다. (예: 010-1234-5678)",
+    mode_off: "지금은 결제를 받지 않습니다.", already: "이미 구매한 작품입니다.", no_work: "구매할 수 없는 작품입니다.",
+    min_price: "이 작품은 결제 가능한 최소 금액(1,000원) 미만이라 구매할 수 없습니다.", too_many: "결제 대기 건이 너무 많습니다. 잠시 뒤 다시 시도해 주세요.",
+    pg_failed: "결제 요청을 만들지 못했습니다. 잠시 뒤 다시 시도해 주세요.", pg_unreachable: "결제 서비스에 연결하지 못했습니다. 잠시 뒤 다시 시도해 주세요.",
+    not_configured: "결제 설정이 아직 끝나지 않았습니다.", bad_request: "요청이 올바르지 않습니다.", server_error: "서버 오류가 발생했습니다."
+  };
+  function openPayDialog(w) {
+    var dlg = $("payDialog"), form = $("payForm"), msg = $("payMsg"), btn = $("payGo");
+    if (!dlg || !dlg.showModal) { showMessage("구매하기", "이 브라우저에서는 결제창을 열 수 없습니다."); return; }
+    $("payTitle").textContent = "「" + w.title + "」 " + (w.price || 0).toLocaleString("ko-KR") + "원";
+    $("payPhone").value = ""; msg.textContent = ""; btn.disabled = false;
+    form.onsubmit = function (e) {
+      e.preventDefault();
+      var phone = $("payPhone").value.replace(/[^0-9]/g, "");
+      if (!/^01[016789][0-9]{7,8}$/.test(phone)) { msg.textContent = PAY_ERR.bad_phone; return; }
+      msg.textContent = ""; btn.disabled = true;
+      sb.auth.getSession().then(function (r) {
+        var tok = r && r.data && r.data.session && r.data.session.access_token;
+        if (!tok) { btn.disabled = false; msg.textContent = PAY_ERR.login; return; }
+        return fetch(CFG.SUPABASE_URL.replace(/\/+$/, "") + "/functions/v1/payapp?a=checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: "Bearer " + tok, apikey: CFG.SUPABASE_ANON_KEY },
+          body: JSON.stringify({ work_id: w.uuid, phone: phone, return_url: location.origin + location.pathname + "#/work/" + w.id + "?paid=1" })
+        }).then(function (res) { return res.json().catch(function () { return {}; }).then(function (j) { return { ok: res.ok, j: j, status: res.status }; }); })
+          .then(function (x) {
+            if (x.ok && x.j.payurl && /^https:\/\//.test(x.j.payurl)) { location.href = x.j.payurl; return; }
+            btn.disabled = false;
+            msg.textContent = x.status === 404 ? "결제 서버 함수(payapp)가 아직 배포되지 않았습니다." : (PAY_ERR[x.j.error] || "결제 요청에 실패했습니다.");
+          });
+      }).then(null, function () { btn.disabled = false; msg.textContent = "네트워크 오류입니다. 연결을 확인하고 다시 시도해 주세요."; });
+    };
+    dlg.showModal();
+  }
+
+  // 결제창에서 돌아온 직후: 결제 확정은 서버(페이앱 통보)가 하므로, 확정될 때까지 잠시 다시 확인
+  function waitForPayment(w, my, n) {
+    var box = $("view") && $("view").querySelector(".buy");
+    if (box && !$("payWait")) { var p = document.createElement("p"); p.id = "payWait"; p.className = "fine"; box.appendChild(p); }
+    var el = $("payWait"); if (el) el.textContent = "결제 결과를 확인하는 중입니다… (" + (n + 1) + "/8)";
+    if (n >= 8) { if (el) el.textContent = "아직 결제가 확인되지 않았습니다. 결제를 마치셨다면 잠시 뒤 새로고침해 주세요. 계속 안 되면 마이페이지의 구매 내역을 확인하거나 문의해 주세요."; return; }
+    setTimeout(function () {
+      if (my !== token) return;
+      loadDetail(w, true).then(function (d) {
+        if (my !== token) return;
+        if (d.purchased) { renderDetail(w, d); showMessage("결제 완료", "결제가 확인되었습니다. 이제 전체 내용을 볼 수 있습니다."); }
+        else waitForPayment(w, my, n + 1);
+      }, function () { waitForPayment(w, my, n + 1); });
+    }, 3000);
+  }
+
   function buyClick(slug) {
     if (MODE === "db" && !SESSION) { go("/login?next=" + encodeURIComponent("/work/" + slug) + "&need=buy"); return; }
     var w = findWork(slug);
     if (MODE !== "db" || !w) { showMessage("구매하기", "Supabase에 연결된 사이트에서만 구매할 수 있습니다."); return; }
     getPayMode().then(function (mode) {
+      if (mode === "payapp") { openPayDialog(w); return; }
       if (mode !== "test") { showMessage("구매하기", "지금은 결제를 받지 않습니다. 결제 기능은 준비 중이며, 실제 결제 연동이 끝나면 열립니다."); return; }
       var price = (w.price || 0).toLocaleString("ko-KR");
       if (!window.confirm("【테스트 결제】\n실제로 돈이 청구되지 않는 시험용 결제입니다.\n\n「" + w.title + "」 " + price + "원을 테스트로 구매할까요?")) return;
@@ -2096,6 +2171,7 @@ window.SAMPLE_DETAILS = {
           if (my !== token) return;
           renderDetail(w, detail);
           window.scrollTo(0, 0);
+          if (qs.get("paid") === "1" && !detail.purchased && w.access === "premium" && !isAdmin()) waitForPayment(w, my, 0);
         });
       } else {
         renderHome();

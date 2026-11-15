@@ -1,0 +1,169 @@
+// 문학연구소 · 페이앱(PayApp) 결제 연동 Edge Function  (함수 이름: payapp)
+// - POST ?a=checkout : 로그인한 회원이 구매 → 서버가 페이앱에 결제요청 → 결제창 주소(payurl) 반환
+// - POST ?a=feedback : 페이앱 서버가 결제 결과를 통보 → 서버가 검증한 뒤에만 구매 확정
+// 비밀 값(연동 KEY/VALUE/결제 KEY, service_role)은 Supabase Secrets/환경변수에만 있고 브라우저에는 전달되지 않습니다.
+// ※ 이 함수는 'JWT 확인(Verify JWT)'을 꺼서 배포합니다. (페이앱 서버는 JWT를 보내지 않음)
+//    checkout 은 아래 코드에서 직접 로그인 토큰을 확인합니다.
+
+type Env = Record<string, string | undefined>;
+type FetchFn = (url: string, init?: any) => Promise<Response>;
+
+const DEFAULT_API = "https://api.payapp.kr/oapi/v2";
+
+async function sha256Hex(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+function safeEq(a: string, b: string): boolean {
+  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+function pad(n: number) { return String(n).padStart(2, "0"); }
+function requestDate(d = new Date()): string {   // 페이앱 서버 시간 기준(한국시간) yyyymmddhhiiss
+  const k = new Date(d.getTime() + 9 * 3600 * 1000);
+  return `${k.getUTCFullYear()}${pad(k.getUTCMonth() + 1)}${pad(k.getUTCDate())}${pad(k.getUTCHours())}${pad(k.getUTCMinutes())}${pad(k.getUTCSeconds())}`;
+}
+
+function cors(env: Env, req: Request) {
+  const allow = env.SITE_ORIGIN || "*";
+  return {
+    "Access-Control-Allow-Origin": allow,
+    "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
+function json(body: unknown, status: number, h: Record<string, string>) {
+  return new Response(JSON.stringify(body), { status, headers: { ...h, "Content-Type": "application/json; charset=utf-8" } });
+}
+
+async function rpc(env: Env, f: FetchFn, name: string, args: unknown) {
+  const r = await f(`${env.SUPABASE_URL}/rest/v1/rpc/${name}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: env.SUPABASE_SERVICE_ROLE_KEY!, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` },
+    body: JSON.stringify(args),
+  });
+  const text = await r.text();
+  if (!r.ok) throw new Error(`rpc ${name} ${r.status}: ${text.slice(0, 200)}`);
+  try { return JSON.parse(text); } catch { return text; }
+}
+
+async function authUser(env: Env, f: FetchFn, req: Request): Promise<string | null> {
+  const auth = req.headers.get("authorization") || "";
+  if (!/^Bearer\s+\S+/.test(auth)) return null;
+  const r = await f(`${env.SUPABASE_URL}/auth/v1/user`, {
+    headers: { apikey: env.SUPABASE_ANON_KEY || env.SUPABASE_SERVICE_ROLE_KEY!, Authorization: auth },
+  });
+  if (!r.ok) return null;
+  const u = await r.json().catch(() => null);
+  return u && typeof u.id === "string" ? u.id : null;
+}
+
+// ---------- checkout ----------
+async function checkout(req: Request, env: Env, f: FetchFn, h: Record<string, string>) {
+  const uid = await authUser(env, f, req);
+  if (!uid) return json({ error: "login" }, 401, h);
+  let b: any; try { b = await req.json(); } catch { return json({ error: "bad_request" }, 400, h); }
+  const workId = String(b.work_id || "");
+  const phone = String(b.phone || "").replace(/[^0-9]/g, "");
+  const returnUrl = String(b.return_url || "");
+  if (!/^[0-9a-f-]{36}$/i.test(workId)) return json({ error: "bad_request" }, 400, h);
+  if (!/^01[016789][0-9]{7,8}$/.test(phone)) return json({ error: "bad_phone" }, 400, h);
+  if (returnUrl && !(env.SITE_ORIGIN && env.SITE_ORIGIN !== "*" ? returnUrl.startsWith(env.SITE_ORIGIN) : /^https:\/\//.test(returnUrl))) {
+    return json({ error: "bad_request" }, 400, h);
+  }
+  if (!env.PAYAPP_USERID || !env.PAYAPP_REQUEST_KEY) return json({ error: "not_configured" }, 503, h);
+
+  const order = await rpc(env, f, "payapp_create_order", { p_user: uid, p_work: workId });
+  if (order.error) return json({ error: order.error }, order.error === "mode_off" ? 503 : 409, h);
+
+  const date = requestDate();
+  const params = new URLSearchParams({
+    cmd: "payrequest",
+    userid: env.PAYAPP_USERID,
+    goodname: String(order.title).slice(0, 60),
+    price: String(order.amount),
+    recvphone: phone,
+    smsuse: "n",
+    var1: order.id,
+    feedbackurl: `${env.SUPABASE_URL}/functions/v1/payapp?a=feedback`,
+    checkretry: "y",
+    requestdate: date,
+    hash: await sha256Hex(env.PAYAPP_USERID + date + env.PAYAPP_REQUEST_KEY),
+  });
+  if (returnUrl) params.set("returnurl", returnUrl);
+
+  let res: URLSearchParams;
+  try {
+    const r = await f(env.PAYAPP_API_URL || DEFAULT_API, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" }, body: params.toString() });
+    res = new URLSearchParams(await r.text());
+  } catch (e) {
+    return json({ error: "pg_unreachable" }, 502, h);
+  }
+  if (res.get("state") !== "1" || !res.get("payurl") || !res.get("mul_no")) {
+    await rpc(env, f, "payapp_cancel", { p_purchase: order.id, p_mul_no: res.get("mul_no") || "" }).catch(() => null);
+    return json({ error: "pg_failed", message: (res.get("errorMessage") || "").slice(0, 100) }, 502, h);
+  }
+  await rpc(env, f, "payapp_set_request", { p_purchase: order.id, p_mul_no: res.get("mul_no") });
+  const payurl = res.get("payurl")!;
+  if (!/^https:\/\//.test(payurl)) return json({ error: "pg_failed" }, 502, h);
+  return json({ payurl }, 200, h);   // 이 시점은 '결제 요청'일 뿐, 권한은 아직 주지 않음
+}
+
+// ---------- feedback ----------
+async function feedback(req: Request, env: Env, f: FetchFn) {
+  const plain = { "Content-Type": "text/plain; charset=utf-8" };
+  const fail = (m: string, s = 400) => new Response(m, { status: s, headers: plain });
+  if (!env.PAYAPP_USERID || !env.PAYAPP_LINKKEY || !env.PAYAPP_LINKVAL || !env.PAYAPP_REQUEST_KEY) return fail("not_configured", 503);
+  const p = new URLSearchParams(await req.text());
+  const g = (k: string) => p.get(k) || "";
+
+  // 1) 페이앱이 보낸 것이 맞는지 검증
+  if (!safeEq(g("userid"), env.PAYAPP_USERID) || !safeEq(g("linkkey"), env.PAYAPP_LINKKEY) || !safeEq(g("linkval"), env.PAYAPP_LINKVAL)) return fail("auth");
+  const want = await sha256Hex(env.PAYAPP_USERID + g("responsedate") + env.PAYAPP_REQUEST_KEY);
+  if (!g("hash") || !safeEq(g("hash").toLowerCase(), want)) return fail("hash");
+
+  // 2) 우리 주문인지 (var1 = 구매 id)
+  const purchaseId = g("var1"), mulNo = g("mul_no"), price = parseInt(g("price"), 10), state = g("pay_state");
+  if (!/^[0-9a-f-]{36}$/i.test(purchaseId) || !mulNo) return new Response("SUCCESS", { headers: plain });   // 우리 주문이 아님: 재시도 불필요
+  if (!Number.isFinite(price)) return fail("price");
+
+  // 3) 상태별 처리
+  if (state === "4") {
+    const r = await rpc(env, f, "payapp_confirm", { p_purchase: purchaseId, p_mul_no: mulNo, p_price: price });
+    if (r === "ok" || r === "already") return new Response("SUCCESS", { headers: plain });
+    if (r === "duplicate_paid") { console.error("DUPLICATE_PAID need manual refund", purchaseId, mulNo); return new Response("SUCCESS", { headers: plain }); }
+    console.error("CONFIRM_REJECTED", r, purchaseId, mulNo, price);
+    return fail(String(r));   // 금액·번호 불일치 등: 구매 확정하지 않음
+  }
+  if (["8", "32", "9", "64"].includes(state)) {
+    const r = await rpc(env, f, "payapp_cancel", { p_purchase: purchaseId, p_mul_no: mulNo });
+    if (r === "mul_mismatch") return fail(String(r));
+    return new Response("SUCCESS", { headers: plain });
+  }
+  // 요청(1), 결제대기(10), 부분취소(70·71) 등: 권한 변경 없음. 부분취소는 관리자가 직접 확인.
+  if (state === "70" || state === "71") console.error("PARTIAL_CANCEL need manual review", purchaseId, mulNo);
+  return new Response("SUCCESS", { headers: plain });
+}
+
+export async function handler(req: Request, env: Env, f: FetchFn): Promise<Response> {
+  const h = cors(env, req);
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: h });
+  if (req.method !== "POST") return json({ error: "method" }, 405, h);
+  const a = new URL(req.url).searchParams.get("a");
+  try {
+    if (a === "checkout") return await checkout(req, env, f, h);
+    if (a === "feedback") return await feedback(req, env, f);
+    return json({ error: "not_found" }, 404, h);
+  } catch (e) {
+    console.error("payapp error", (e as Error).message);
+    return json({ error: "server_error" }, 500, h);
+  }
+}
+
+// @ts-ignore Deno 런타임에서만 실행
+if (typeof Deno !== "undefined") { // @ts-ignore
+  Deno.serve((req: Request) => handler(req, Deno.env.toObject(), fetch));
+}
