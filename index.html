@@ -353,6 +353,63 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; }
 }
 @media print { .auth, .my-layout .form { display: none !important; } }
 
+/* ===== 6단계: 관리자 ===== */
+.admin-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 16px; }
+.admin-tabs a { padding: 9px 14px; border: 1px solid var(--line); border-radius: var(--radius); font-size: 14px; font-weight: 600; min-height: 40px; display: inline-flex; align-items: center; }
+.admin-tabs a.is-on { background: var(--fg); color: #fff; border-color: var(--fg); }
+.admin-body { padding-top: 24px; padding-bottom: 48px; }
+.admin-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.adm-table td, .adm-table th { font-size: 14px; }
+.adm-actions { white-space: nowrap; }
+.adm-actions .btn { margin: 2px 4px 2px 0; }
+.adm-box { border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; margin-bottom: 22px; }
+.adm-box h2 { font-size: 18px; margin-bottom: 12px; }
+.adm-danger { border-color: #b00020; }
+.btn-danger { color: #b00020; border-color: #b00020; }
+.adm-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.adm-form .field-wide { grid-column: 1 / -1; }
+.adm-form input[type=text], .adm-form input[type=number], .adm-form input[type=search], .adm-form select, .adm-form textarea,
+.adm-search input, .adm-search select {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); font: inherit; font-size: 16px; background: #fff; color: var(--fg);
+}
+.adm-form textarea { resize: vertical; }
+.hint { font-size: 12px; color: var(--muted); }
+.chk { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 500; min-height: 40px; }
+.chk input { width: 20px; height: 20px; flex: none; }
+.chk-col { justify-content: flex-end; }
+.is-hidden { display: none; }
+.adm-search { display: flex; gap: 8px; margin-bottom: 16px; max-width: 520px; }
+.adm-h { font-size: 17px; margin: 26px 0 10px; }
+.crumbs-back { margin-bottom: 12px; }
+.ed-sec { border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 8px; }
+.ed-sec > summary { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; min-height: 44px; }
+.sec-no { display: inline-flex; width: 26px; height: 26px; border-radius: 50%; background: var(--soft); align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex: none; }
+.ed-title { font-weight: 600; flex: 1; }
+.ed-state { font-size: 12px; color: var(--muted); }
+.ed-state.is-filled { color: #0a5c2a; font-weight: 600; }
+.ed-body { padding: 4px 14px 16px; display: grid; gap: 10px; }
+.ed-body .help { font-size: 14px; color: var(--muted); }
+.ed-ex pre { white-space: pre-wrap; background: var(--soft); padding: 10px 12px; border-radius: var(--radius); font-size: 13px; margin-top: 6px; }
+.ed-text { width: 100%; min-height: 200px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); font: inherit; font-size: 16px; line-height: 1.7; }
+.ed-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ed-preview { border: 1px dashed var(--line); border-radius: var(--radius); padding: 14px; }
+.file-list { list-style: none; padding: 0; margin: 0 0 12px; }
+.file-list li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.file-name { flex: 1; min-width: 140px; word-break: break-all; }
+.upload-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.empty-sm { color: var(--muted); font-size: 14px; margin-bottom: 10px; }
+.stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.stat { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+.stat-l { font-size: 13px; color: var(--muted); }
+.stat-v { font-size: 22px; }
+.bar-cell { width: 35%; }
+.bar { display: block; height: 10px; background: var(--fg); border-radius: 2px; }
+@media (max-width: 720px) {
+  .adm-form { grid-template-columns: 1fr; }
+  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .adm-box { padding: 14px; }
+}
+
 </style>
 
   <!-- =====================================================================
@@ -364,8 +421,8 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; }
        ===================================================================== -->
   <script>
     window.MUNHAK_CONFIG = {
-      SUPABASE_URL: "https://qwsjjkhgfnypuzvxgoec.supabase.co",
-      SUPABASE_ANON_KEY: "sb_publishable_pZmVLiE7pDBWhCPdZEtwTA_j9JmcN3H"
+      SUPABASE_URL: "YOUR_SUPABASE_URL",
+      SUPABASE_ANON_KEY: "YOUR_SUPABASE_ANON_KEY"
     };
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -395,7 +452,7 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; }
   <footer class="site-footer">
     <div class="wrap footer-row">
       <strong>문학연구소</strong>
-      <span>수능 문학 분석 플랫폼 · 개발 중(5단계)</span>
+      <span>수능 문학 분석 플랫폼 · 개발 중(6단계)</span>
       <span id="modeLabel"></span>
     </div>
   </footer>
@@ -615,6 +672,529 @@ window.SAMPLE_DETAILS = {
     ]
   }
 };
+
+</script>
+  <script>
+/* 문학연구소 · 6단계: 관리자 페이지
+ * - app.js 가 window.MUNHAK_ADMIN_FACTORY(ctx) 를 호출해 사용합니다. (index.html 에서 app.js 보다 먼저 불러와야 함)
+ * - 이 파일의 화면 제한은 '편의용'입니다. 실제 보호는 Supabase 의 RLS(DB 정책)가 합니다.
+ */
+(function () {
+  "use strict";
+
+  var EXAMPLE_TAG = "예시(실제 기출 아님)";
+  var PREVIEW_DEFAULT = window.PREVIEW_KEYS || [];
+  var MAX_PDF = 30 * 1024 * 1024;   // 30MB
+
+  /* =====================================================================
+     1. 입력 텍스트 <-> 데이터 변환 (태블릿에서 JSON 없이 쉽게 입력하기 위한 형식)
+     ===================================================================== */
+  function norm(t) { return String(t == null ? "" : t).replace(/\r\n?/g, "\n").trim(); }
+  function trimmed(a) { return a.map(function (s) { return s.trim(); }).filter(Boolean); }
+  function blocks(t) { var n = norm(t); return n ? trimmed(n.split(/\n[ \t]*\n+/)) : []; }
+  function lines(t) { var n = norm(t); return n ? trimmed(n.split("\n")) : []; }
+  function needArray(d) { if (!Array.isArray(d)) throw new Error("저장된 형식이 달라 불러올 수 없습니다."); return d; }
+
+  function pairs(t, hint) {
+    return lines(t).map(function (l, i) {
+      var k = l.indexOf("|");
+      if (k < 1 || !l.slice(k + 1).trim()) {
+        throw new Error("빈 줄을 뺀 " + (i + 1) + "번째 줄이 '" + hint + "' 형식이 아닙니다. (가운데 | 기호가 필요합니다)");
+      }
+      return [l.slice(0, k).trim(), l.slice(k + 1).trim()];
+    });
+  }
+  function titledBlocks(t, hint) {
+    return blocks(t).map(function (b, i) {
+      var ls = trimmed(b.split("\n"));
+      if (ls.length < 2) throw new Error((i + 1) + "번째 묶음: 첫 줄은 " + hint + ", 둘째 줄부터 내용을 써 주세요.");
+      return [ls[0], ls.slice(1).join(" ")];
+    });
+  }
+
+  var KINDS = {
+    paras: {
+      parse: function (t) { return blocks(t).map(function (b) { return b.replace(/\s*\n\s*/g, " "); }); },
+      ser: function (d) { return needArray(d).join("\n\n"); }
+    },
+    bullets: {
+      parse: function (t) { return lines(t); },
+      ser: function (d) { return needArray(d).join("\n"); }
+    },
+    kv: {
+      parse: function (t) { return pairs(t, "항목 | 내용"); },
+      ser: function (d) { return needArray(d).map(function (r) { return r[0] + " | " + r[1]; }).join("\n"); }
+    },
+    stanzas: {
+      parse: function (t) { return blocks(t).map(function (b) { return trimmed(b.split("\n")); }); },
+      ser: function (d) { return needArray(d).map(function (s) { return s.join("\n"); }).join("\n\n"); }
+    },
+    modern: {
+      parse: function (t) { return pairs(t, "원문 | 현대어 풀이").map(function (r) { return { o: r[0], m: r[1] }; }); },
+      ser: function (d) { return needArray(d).map(function (r) { return r.o + " | " + r.m; }).join("\n"); }
+    },
+    analysis: {
+      parse: function (t) { return titledBlocks(t, "구절(제목)").map(function (r) { return { q: r[0], a: r[1] }; }); },
+      ser: function (d) { return needArray(d).map(function (r) { return r.q + "\n" + r.a; }).join("\n\n"); }
+    },
+    structure: {
+      parse: function (t) { return pairs(t, "단계 | 설명").map(function (r) { return { part: r[0], desc: r[1] }; }); },
+      ser: function (d) { return needArray(d).map(function (r) { return r.part + " | " + r.desc; }).join("\n"); }
+    },
+    compare: {
+      parse: function (t) { return titledBlocks(t, "비교 작품명").map(function (r) { return { work: r[0], text: r[1] }; }); },
+      ser: function (d) { return needArray(d).map(function (r) { return r.work + "\n" + r.text; }).join("\n\n"); }
+    },
+    choices: {
+      parse: function (t, exampleTag) {
+        return blocks(t).map(function (b, i) {
+          var ls = trimmed(b.split("\n"));
+          var m = ls[0].match(/^([OoXx○×ㅇ])\s*[|:：]\s*(.+)$/);
+          if (!m) throw new Error((i + 1) + "번째 선지: 첫 줄은 'O | 선지 내용' 또는 'X | 선지 내용' 형식이어야 합니다. (O=적절함, X=적절하지 않음)");
+          if (ls.length < 2) throw new Error((i + 1) + "번째 선지: 둘째 줄부터 판단 근거를 써 주세요.");
+          var c = { ok: /[Oo○ㅇ]/.test(m[1]), t: m[2].trim(), why: ls.slice(1).join(" ") };
+          if (exampleTag) c.tag = EXAMPLE_TAG;
+          return c;
+        });
+      },
+      ser: function (d) { return needArray(d).map(function (c) { return (c.ok ? "O" : "X") + " | " + c.t + "\n" + c.why; }).join("\n\n"); }
+    }
+  };
+
+  var DEFS = {
+    info:       { kind: "kv",       help: "한 줄에 하나씩 '항목 | 내용' 으로 씁니다.", ex: "작품명 | 진달래꽃\n작가 | 김소월\n갈래 | 현대시, 서정시\n운율 | 3음보" },
+    author:     { kind: "paras",    help: "문단은 빈 줄로 구분합니다.", ex: "김소월은 평안북도 출신의 시인으로 …\n\n대표작으로는 …" },
+    background: { kind: "paras",    help: "문단은 빈 줄로 구분합니다.", ex: "1920년대에 발표된 작품으로 …" },
+    original:   { kind: "stanzas",  help: "연(문단)은 빈 줄로, 행은 줄바꿈으로 구분합니다. 원문은 정확히 확인해서 입력하세요.", ex: "첫째 행\n둘째 행\n셋째 행\n\n둘째 연 첫째 행\n둘째 연 둘째 행" },
+    modern:     { kind: "modern",   help: "한 줄에 하나씩 '원문 | 현대어 풀이' 로 씁니다.", ex: "나 보기가 역겨워 | 나를 보는 것이 싫어서\n가실 때에는 | 떠나실 때에는" },
+    analysis:   { kind: "analysis", help: "묶음마다 첫 줄은 구절(제목), 둘째 줄부터 해설입니다. 묶음 사이는 빈 줄로 구분합니다.", ex: "1연 — 나 보기가 역겨워 / 가실 때에는\n이별을 가정하여 제시하고 …\n\n2연 — 영변에 약산 …\n구체적 공간과 소재가 …" },
+    attitude:   { kind: "paras",    help: "문단은 빈 줄로 구분합니다.", ex: "화자는 이별을 담담히 받아들이는 듯하지만 …" },
+    structure:  { kind: "structure",help: "한 줄에 하나씩 '단계 | 설명' 으로 씁니다.", ex: "1연 (기) | 이별 상황의 가정\n2연 (승) | 꽃을 뿌리겠다는 정성" },
+    theme:      { kind: "paras",    help: "문단은 빈 줄로 구분합니다.", ex: "이별의 슬픔을 참고 견디는 희생적 사랑" },
+    expression: { kind: "bullets",  help: "한 줄에 하나씩 씁니다.", ex: "수미상관으로 정서를 강조함\n역설적 표현으로 슬픔을 드러냄" },
+    points:     { kind: "bullets",  help: "한 줄에 하나씩 씁니다.", ex: "화자의 정서를 드러내는 방식: 절제와 역설\n수미상관의 효과" },
+    choices:    { kind: "choices",  help: "선지마다 첫 줄은 'O | 선지' (적절함) 또는 'X | 선지' (적절하지 않음), 둘째 줄부터 판단 근거입니다. 선지 사이는 빈 줄로 구분합니다.", ex: "O | 수미상관의 구조를 활용하여 정서를 강조하고 있다.\n1연과 4연이 반복되므로 적절합니다.\n\nX | 공간의 이동에 따라 정서가 변화하고 있다.\n공간 이동이 없으므로 적절하지 않습니다." },
+    compare:    { kind: "compare",  help: "묶음마다 첫 줄은 비교 작품명, 둘째 줄부터 설명입니다. 묶음 사이는 빈 줄로 구분합니다.", ex: "「가시리」 (고려가요)\n둘 다 이별의 정서를 다루지만 …" },
+    summary:    { kind: "bullets",  help: "한 줄에 하나씩 씁니다. 시험 직전에 볼 핵심만 짧게 정리하세요.", ex: "갈래: 현대시 / 운율: 3음보\n정서: 슬픔을 참는 인종" }
+  };
+
+  function parseSection(key, text, exampleTag) {
+    var d = DEFS[key], data = d.kind === "choices" ? KINDS.choices.parse(text, exampleTag) : KINDS[d.kind].parse(text);
+    return data.length ? data : null;
+  }
+  function serSection(key, body) { return KINDS[DEFS[key].kind].ser(body); }
+
+  /* =====================================================================
+     2. 화면
+     ===================================================================== */
+  window.MUNHAK_ADMIN_FACTORY = function (ctx) {
+    var $ = ctx.$, esc = ctx.esc;
+    function sb() { return ctx.sb(); }
+    function won(n) { return Number(n || 0).toLocaleString("ko-KR") + "원"; }
+    function day(s) { return esc(String(s || "").slice(0, 10)); }
+    function errBox(e) { return '<p class="err">' + esc((e && e.message) || e) + "</p>"; }
+    function setMsg(el, text, ok) {
+      if (!el) return;
+      el.textContent = text || "";
+      el.className = el.className.replace(/\s*\bis-(error|ok)\b/g, "") + (text ? (ok ? " is-ok" : " is-error") : "");
+    }
+
+    var TABS = [["/admin", "작품 관리"], ["/admin/members", "회원"], ["/admin/purchases", "구매 내역"], ["/admin/sales", "매출 통계"]];
+    function shell(active, inner) {
+      return '<section class="page-top"><div class="wrap"><nav class="crumbs" aria-label="현재 위치"><a href="#/">홈</a><span>관리자</span></nav>' +
+        '<h1 class="page-title">관리자</h1><nav class="admin-tabs" aria-label="관리자 메뉴">' +
+        TABS.map(function (t) { return '<a href="#' + t[0] + '"' + (t[0] === active ? ' class="is-on" aria-current="page"' : "") + ">" + t[1] + "</a>"; }).join("") +
+        '</nav></div></section><div class="wrap admin-body">' + inner + "</div>";
+    }
+    function loading() { return '<p class="empty">불러오는 중…</p>'; }
+
+    /* ---------- 작품 목록 ---------- */
+    function viewWorks() {
+      var my = ctx.token();
+      $("view").innerHTML = shell("/admin", '<div class="admin-bar"><a class="btn btn-solid" href="#/admin/work/new">+ 새 작품 등록</a>' +
+        '<span class="muted">공개로 바꾼 작품만 일반 방문자에게 보입니다.</span></div><div id="admList">' + loading() + "</div>");
+      sb().from("works").select("id,slug,title,author,access,price,is_published,is_exam,created_at,categories(name)")
+        .order("created_at", { ascending: false }).then(function (r) {
+          if (my !== ctx.token()) return;
+          var box = $("admList"); if (!box) return;
+          if (r.error) { box.innerHTML = errBox(r.error); return; }
+          var rows = r.data || [];
+          if (!rows.length) { box.innerHTML = '<p class="empty">등록된 작품이 없습니다. 위의 「새 작품 등록」을 눌러 시작하세요.</p>'; return; }
+          box.innerHTML = '<div class="tbl-wrap"><table class="tbl adm-table"><thead><tr><th>작품</th><th>분류</th><th>이용</th><th>상태</th><th>관리</th></tr></thead><tbody>' +
+            rows.map(function (w) {
+              return "<tr><td><strong>" + esc(w.title) + "</strong><br><span class=\"muted\">" + esc(w.author) + (w.is_exam ? " · 기출" : "") + "</span></td>" +
+                "<td>" + esc(w.categories ? w.categories.name : "-") + "</td>" +
+                "<td>" + (w.access === "free" ? "무료" : "프리미엄<br><span class=\"muted\">" + won(w.price) + "</span>") + "</td>" +
+                "<td>" + (w.is_published ? '<span class="badge badge-premium">공개</span>' : '<span class="badge badge-tag">비공개</span>') + "</td>" +
+                '<td class="adm-actions"><a class="btn btn-ghost" href="#/admin/work/' + esc(w.id) + '">편집</a>' +
+                (w.is_published ? '<a class="btn btn-ghost" href="#/work/' + esc(w.slug) + '">보기</a>' : "") +
+                '<button type="button" class="btn btn-ghost" data-pub="' + esc(w.id) + '" data-to="' + (w.is_published ? "0" : "1") + '">' + (w.is_published ? "비공개로" : "공개로") + "</button></td></tr>";
+            }).join("") + "</tbody></table></div><p class=\"fine\">총 " + rows.length + "개 작품</p>";
+          box.onclick = function (e) {
+            var b = e.target.closest("[data-pub]"); if (!b) return;
+            b.disabled = true;
+            sb().from("works").update({ is_published: b.getAttribute("data-to") === "1" }).eq("id", b.getAttribute("data-pub")).then(function (u) {
+              if (u.error) { b.disabled = false; ctx.showMessage("변경하지 못했습니다", u.error.message); return; }
+              ctx.invalidateWorks(); viewWorks();
+            });
+          };
+        }, function (e) { var box = $("admList"); if (box && my === ctx.token()) box.innerHTML = errBox(e); });
+    }
+
+    /* ---------- 작품 등록/수정 ---------- */
+    function opt(v, label, cur) { return '<option value="' + esc(v) + '"' + (String(cur) === String(v) ? " selected" : "") + ">" + esc(label) + "</option>"; }
+
+    function workFormHTML(w, cats) {
+      var isNew = !w.id;
+      return '<form id="workForm" class="adm-form" novalidate>' +
+        '<div class="field"><label for="f_title">작품명 *</label><input id="f_title" type="text" maxlength="100" value="' + esc(w.title || "") + '"></div>' +
+        '<div class="field"><label for="f_author">작가 *</label><input id="f_author" type="text" maxlength="60" value="' + esc(w.author || "") + '"></div>' +
+        '<div class="field"><label for="f_era">시대</label><input id="f_era" type="text" maxlength="40" placeholder="예: 조선 전기, 1920년대" value="' + esc(w.era || "") + '"></div>' +
+        '<div class="field"><label for="f_genre">갈래</label><input id="f_genre" type="text" maxlength="40" placeholder="예: 가사, 현대시, 현대소설" value="' + esc(w.genre || "") + '"></div>' +
+        '<div class="field"><label for="f_cat">분류 *</label><select id="f_cat">' +
+          cats.map(function (c) { return opt(c.id, c.name, w.category_id); }).join("") + "</select></div>" +
+        '<div class="field"><label for="f_slug">주소 이름 (영문) *</label><input id="f_slug" type="text" maxlength="60" autocapitalize="none" placeholder="예: seongsan-byeolgok" value="' + esc(w.slug || "") + '">' +
+          '<span class="hint">영문·숫자·-·_ 만 가능. 사이트 주소(#/work/이름)에 쓰입니다.' + (isNew ? "" : " 바꾸면 기존 링크가 끊깁니다.") + "</span></div>" +
+        '<div class="field field-wide"><label for="f_summary">한 줄 요약 (카드에 표시)</label><textarea id="f_summary" rows="2" maxlength="200">' + esc(w.summary || "") + "</textarea></div>" +
+        '<div class="field"><label for="f_access">이용 구분 *</label><select id="f_access">' + opt("free", "무료", w.access || "premium") + opt("premium", "프리미엄(유료)", w.access || "premium") + "</select></div>" +
+        '<div class="field"><label for="f_price">가격 (원)</label><input id="f_price" type="number" inputmode="numeric" min="0" step="100" value="' + esc(w.price == null ? 0 : w.price) + '"><span class="hint">프리미엄은 100원 이상</span></div>' +
+        '<div class="field"><label for="f_pop">인기 점수</label><input id="f_pop" type="number" inputmode="numeric" min="0" value="' + esc(w.popularity || 0) + '"><span class="hint">클수록 목록 위쪽에 나옵니다</span></div>' +
+        '<div class="field chk-col"><label class="chk"><input id="f_exam" type="checkbox"' + (w.is_exam ? " checked" : "") + '> 수능·모의평가 기출 작품</label>' +
+          '<label class="chk"><input id="f_pub" type="checkbox"' + (w.is_published ? " checked" : "") + '> 공개 (체크 해제 시 방문자에게 숨김)</label></div>' +
+        '<div class="field field-wide"><p class="form-msg" id="workMsg" role="alert"></p><button type="submit" class="btn btn-solid">' + (isNew ? "작품 등록" : "작품 정보 저장") + "</button></div></form>";
+    }
+
+    function readWorkForm() {
+      var v = function (id) { return $(id).value.trim(); };
+      var access = $("f_access").value;
+      var row = {
+        title: v("f_title"), author: v("f_author"), era: v("f_era") || null, genre: v("f_genre") || null,
+        category_id: Number($("f_cat").value), slug: v("f_slug"), summary: v("f_summary") || null,
+        access: access, price: access === "free" ? 0 : parseInt($("f_price").value, 10),
+        popularity: parseInt($("f_pop").value, 10) || 0, is_exam: $("f_exam").checked, is_published: $("f_pub").checked
+      };
+      if (!row.title) throw new Error("작품명을 입력해 주세요.");
+      if (!row.author) throw new Error("작가를 입력해 주세요.");
+      if (!row.category_id) throw new Error("분류를 선택해 주세요.");
+      if (!/^[A-Za-z0-9_-]{1,60}$/.test(row.slug)) throw new Error("주소 이름은 영문·숫자·-·_ 만 쓸 수 있습니다. (예: seongsan-byeolgok)");
+      if (access === "premium" && !(row.price >= 100 && row.price <= 10000000)) throw new Error("프리미엄 작품의 가격은 100원 이상 10,000,000원 이하로 입력해 주세요.");
+      if (row.popularity < 0) row.popularity = 0;
+      return row;
+    }
+
+    function dbErrText(e) {
+      var m = (e && e.message) || "";
+      if (e && (e.code === "23505" || /duplicate key|already exists/i.test(m))) return "이미 사용 중인 주소 이름입니다. 다른 이름을 입력해 주세요.";
+      if (e && (e.code === "42501" || /row-level security|permission denied/i.test(m))) return "권한이 없습니다. 관리자 계정으로 로그인했는지 확인해 주세요.";
+      return "저장하지 못했습니다. (" + m + ")";
+    }
+
+    function viewWorkForm(id) {
+      var my = ctx.token();
+      $("view").innerHTML = shell("/admin", loading());
+      var none = Promise.resolve({ data: null, error: null }), noneList = Promise.resolve({ data: [], error: null });
+      Promise.all([
+        sb().from("categories").select("id,slug,name").order("sort"),
+        id ? sb().from("works").select("*").eq("id", id).maybeSingle() : none,
+        id ? sb().from("analyses").select("section_key,body,is_preview").eq("work_id", id) : noneList,
+        id ? sb().from("work_files").select("id,file_name,storage_path,created_at").eq("work_id", id).order("created_at") : noneList
+      ]).then(function (r) {
+        if (my !== ctx.token()) return;
+        for (var i = 0; i < r.length; i++) if (r[i].error) { $("view").innerHTML = shell("/admin", errBox(r[i].error)); return; }
+        var cats = r[0].data || [], work = r[1].data;
+        if (id && !work) { $("view").innerHTML = shell("/admin", '<p class="empty">작품을 찾을 수 없습니다. <a class="link-btn" href="#/admin">목록으로</a></p>'); return; }
+        if (!cats.length) { $("view").innerHTML = shell("/admin", '<p class="err">분류(categories) 데이터가 없습니다. schema.sql 을 다시 실행해 주세요.</p>'); return; }
+        work = work || { access: "premium", is_published: false };
+        var existing = {}; (r[2].data || []).forEach(function (a) { existing[a.section_key] = a; });
+
+        var inner = '<p class="crumbs-back"><a class="link-btn" href="#/admin">← 작품 목록</a></p>' +
+          '<section class="adm-box"><h2>' + (id ? "작품 정보" : "새 작품 등록") + "</h2>" +
+          (id ? "" : '<p class="fine">먼저 기본 정보를 저장하면 분석 자료와 PDF를 입력할 수 있습니다. 새 작품은 처음에 비공개로 두는 것을 권장합니다.</p>') +
+          workFormHTML(work, cats) + "</section>";
+        if (id) {
+          inner += '<section class="adm-box" id="filesBox"><h2>PDF 파일</h2>' + filesHTML(work, r[3].data || []) + "</section>" +
+            '<section class="adm-box"><h2>분석 자료 (14개 항목)</h2>' +
+            (work.access === "premium" ? '<p class="fine">프리미엄 작품: 「구매 전에도 보이게」를 체크한 항목만 구매하지 않은 방문자에게 보입니다.</p>' : '<p class="fine">무료 작품은 입력한 모든 항목이 누구에게나 보입니다.</p>') +
+            '<div id="edWrap">' + editorHTML(work, existing) + "</div></section>" +
+            '<section class="adm-box adm-danger"><h2>작품 삭제</h2><p class="fine">분석 자료와 PDF가 함께 삭제되며 되돌릴 수 없습니다. 구매 내역이 있는 작품은 삭제할 수 없으니 「비공개」로 바꿔 주세요.</p>' +
+            '<p class="form-msg" id="delMsg" role="alert"></p><button type="button" class="btn btn-ghost btn-danger" id="delWork">이 작품 삭제</button></section>';
+        }
+        $("view").innerHTML = shell("/admin", inner);
+        document.title = (id ? work.title + " 편집" : "새 작품 등록") + " · 관리자";
+        bindWorkForm(id, work);
+        if (id) { bindEditor(work, existing); bindFiles(work); $("delWork").addEventListener("click", function () { deleteWork(work); }); }
+      }, function (e) { if (my === ctx.token()) $("view").innerHTML = shell("/admin", errBox(e)); });
+    }
+
+    function bindWorkForm(id, work) {
+      var access = $("f_access"), price = $("f_price");
+      function syncPrice() { price.disabled = access.value === "free"; if (access.value === "free") price.value = 0; }
+      access.addEventListener("change", syncPrice); syncPrice();
+      $("workForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var msg = $("workMsg"), btn = e.target.querySelector("button[type=submit]"), row;
+        try { row = readWorkForm(); } catch (err) { setMsg(msg, err.message); return; }
+        setMsg(msg, ""); btn.disabled = true;
+        var q = id ? sb().from("works").update(row).eq("id", id) : sb().from("works").insert(row).select("id").single();
+        q.then(function (r) {
+          btn.disabled = false;
+          if (r.error) { setMsg(msg, dbErrText(r.error)); return; }
+          ctx.invalidateWorks();
+          if (!id) { ctx.go("/admin/work/" + r.data.id); return; }
+          viewWorkForm(id);   // 가격/이용 구분이 바뀌었을 수 있어 화면을 다시 구성
+        }, function (err) { btn.disabled = false; setMsg(msg, dbErrText(err)); });
+      });
+    }
+
+    /* ---------- 분석 항목 편집기 ---------- */
+    function editorHTML(work, existing) {
+      return ctx.SECTIONS.map(function (s, i) {
+        var def = DEFS[s.key], row = existing[s.key], text = "", warn = false, hasTag = false;
+        if (row) {
+          try { text = serSection(s.key, row.body); hasTag = def.kind === "choices" && row.body.some(function (c) { return c && c.tag; }); }
+          catch (e) { text = ""; warn = true; }
+        }
+        var prev = row ? !!row.is_preview : PREVIEW_DEFAULT.indexOf(s.key) !== -1;
+        return '<details class="ed-sec" data-key="' + s.key + '"><summary><span class="sec-no">' + (i + 1) + "</span><span class=\"ed-title\">" + esc(s.title) + '</span>' +
+          '<span class="ed-state' + (row ? " is-filled" : "") + '">' + (row ? "입력됨" : "비어 있음") + "</span></summary>" +
+          '<div class="ed-body"><p class="help">' + esc(def.help) + "</p>" +
+          '<details class="ed-ex"><summary>입력 예시 보기</summary><pre>' + esc(def.ex) + "</pre></details>" +
+          (warn ? '<p class="err">저장된 내용의 형식이 달라 불러오지 못했습니다. 새로 입력해 저장하면 덮어씁니다.</p>' : "") +
+          '<textarea class="ed-text" rows="10" spellcheck="false" aria-label="' + esc(s.title) + '">' + esc(text) + "</textarea>" +
+          '<label class="chk ed-prevwrap' + (work.access === "premium" ? "" : " is-hidden") + '"><input type="checkbox" class="ed-prev"' + (prev ? " checked" : "") + "> 구매 전에도 보이게 (미리보기 공개)</label>" +
+          (def.kind === "choices" ? '<label class="chk"><input type="checkbox" class="ed-tag"' + (hasTag ? " checked" : "") + "> 직접 만든 예시 선지입니다 (「" + EXAMPLE_TAG + "」 표시 붙이기)</label>" : "") +
+          '<div class="ed-actions"><button type="button" class="btn btn-solid" data-ed="save">이 항목 저장</button>' +
+          '<button type="button" class="btn btn-ghost" data-ed="preview">미리보기</button>' +
+          '<button type="button" class="btn btn-ghost" data-ed="clear">내용 지우기</button></div>' +
+          '<p class="form-msg ed-msg" role="alert"></p><div class="ed-preview sec" hidden></div></div></details>';
+      }).join("");
+    }
+
+    function bindEditor(work, existing) {
+      var wrap = $("edWrap");
+      wrap.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-ed]"); if (!b) return;
+        var box = b.closest(".ed-sec"), key = box.getAttribute("data-key"), act = b.getAttribute("data-ed");
+        var ta = box.querySelector(".ed-text"), msg = box.querySelector(".ed-msg"), pv = box.querySelector(".ed-preview");
+        var tag = box.querySelector(".ed-tag"), state = box.querySelector(".ed-state");
+        setMsg(msg, "");
+
+        if (act === "clear") {
+          if (!window.confirm("이 항목의 내용을 지울까요?")) return;
+          b.disabled = true;
+          sb().from("analyses").delete().eq("work_id", work.id).eq("section_key", key).then(function (r) {
+            b.disabled = false;
+            if (r.error) { setMsg(msg, dbErrText(r.error)); return; }
+            ta.value = ""; pv.hidden = true; delete existing[key];
+            state.textContent = "비어 있음"; state.className = "ed-state"; setMsg(msg, "삭제되었습니다.", true);
+          });
+          return;
+        }
+
+        var data;
+        try { data = parseSection(key, ta.value, tag && tag.checked); } catch (err) { setMsg(msg, err.message); return; }
+        if (!data) { setMsg(msg, act === "save" ? "내용이 비어 있습니다. 지우려면 「내용 지우기」를 누르세요." : "미리 볼 내용이 없습니다."); return; }
+
+        if (act === "preview") {
+          try { pv.innerHTML = ctx.RENDERERS[key](data); pv.hidden = false; } catch (err) { setMsg(msg, "미리보기를 만들지 못했습니다."); }
+          return;
+        }
+        // save
+        b.disabled = true;
+        var row = { work_id: work.id, section_key: key, body: data, is_preview: box.querySelector(".ed-prev").checked, updated_at: new Date().toISOString() };
+        sb().from("analyses").upsert(row, { onConflict: "work_id,section_key" }).then(function (r) {
+          b.disabled = false;
+          if (r.error) { setMsg(msg, dbErrText(r.error)); return; }
+          existing[key] = { body: data, is_preview: row.is_preview };
+          state.textContent = "입력됨"; state.className = "ed-state is-filled";
+          setMsg(msg, "저장되었습니다. (" + data.length + "개)", true);
+          if (!pv.hidden) pv.innerHTML = ctx.RENDERERS[key](data);
+        }, function (err) { b.disabled = false; setMsg(msg, dbErrText(err)); });
+      });
+    }
+
+    /* ---------- PDF ---------- */
+    function filesHTML(work, files) {
+      return '<div id="fileList">' + (files.length
+        ? '<ul class="file-list">' + files.map(function (f) {
+            return "<li><span class=\"file-name\">" + esc(f.file_name) + "</span><span class=\"muted\">" + day(f.created_at) + "</span>" +
+              '<button type="button" class="btn btn-ghost" data-fdl="' + esc(f.storage_path) + '" data-name="' + esc(f.file_name) + '">내려받기</button>' +
+              '<button type="button" class="btn btn-ghost btn-danger" data-fdel="' + esc(f.id) + '" data-path="' + esc(f.storage_path) + '">삭제</button></li>';
+          }).join("") + "</ul>"
+        : '<p class="empty-sm">등록된 PDF가 없습니다.</p>') + "</div>" +
+        '<div class="upload-row"><input type="file" id="pdfInput" accept="application/pdf,.pdf"><button type="button" class="btn btn-solid" id="pdfUp">PDF 업로드</button></div>' +
+        '<p class="fine">PDF는 최대 30MB. 프리미엄 작품의 PDF는 구매자와 관리자만 내려받을 수 있습니다.</p><p class="form-msg" id="fileMsg" role="alert"></p>';
+    }
+    function refreshFiles(work) {
+      sb().from("work_files").select("id,file_name,storage_path,created_at").eq("work_id", work.id).order("created_at").then(function (r) {
+        var box = $("filesBox"); if (!box) return;
+        if (r.error) { setMsg($("fileMsg"), r.error.message); return; }
+        box.innerHTML = "<h2>PDF 파일</h2>" + filesHTML(work, r.data || []);
+        bindFiles(work);
+      });
+    }
+    function bindFiles(work) {
+      var box = $("filesBox"), msg = function (t, ok) { setMsg($("fileMsg"), t, ok); };
+      $("pdfUp").addEventListener("click", function () {
+        var f = $("pdfInput").files && $("pdfInput").files[0];
+        if (!f) { msg("업로드할 PDF 파일을 먼저 선택해 주세요."); return; }
+        if (!/\.pdf$/i.test(f.name) || (f.type && f.type !== "application/pdf")) { msg("PDF 파일(.pdf)만 올릴 수 있습니다."); return; }
+        if (f.size > MAX_PDF) { msg("파일이 너무 큽니다. 30MB 이하로 줄여 주세요."); return; }
+        if (f.size === 0) { msg("빈 파일입니다."); return; }
+        // 저장 경로에는 한글/특수문자를 쓰지 않음(스토리지 오류 방지). 원래 이름은 DB 에 따로 저장.
+        var path = work.id + "/" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8) + ".pdf";
+        var up = $("pdfUp"); up.disabled = true; msg("업로드 중… 잠시 기다려 주세요.", true);
+        sb().storage.from("work-files").upload(path, f, { contentType: "application/pdf", upsert: false }).then(function (r) {
+          if (r.error) { up.disabled = false; msg("업로드하지 못했습니다. (" + r.error.message + ")"); return; }
+          return sb().from("work_files").insert({ work_id: work.id, storage_path: path, file_name: f.name.slice(0, 120) }).then(function (ins) {
+            if (ins.error) {
+              sb().storage.from("work-files").remove([path]);   // 목록 등록에 실패하면 올린 파일도 정리
+              up.disabled = false; msg(dbErrText(ins.error)); return;
+            }
+            refreshFiles(work);
+          });
+        }, function (err) { up.disabled = false; msg("업로드하지 못했습니다. (" + ((err && err.message) || err) + ")"); });
+      });
+      box.addEventListener("click", function (e) {
+        var dl = e.target.closest("[data-fdl]"), del = e.target.closest("[data-fdel]");
+        if (dl) {
+          dl.disabled = true;
+          sb().storage.from("work-files").createSignedUrl(dl.getAttribute("data-fdl"), 60, { download: dl.getAttribute("data-name") }).then(function (r) {
+            dl.disabled = false;
+            if (r.error || !r.data) { msg("내려받지 못했습니다. (" + ((r.error && r.error.message) || "오류") + ")"); return; }
+            var a = document.createElement("a"); a.href = r.data.signedUrl; a.rel = "noopener"; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          });
+        } else if (del) {
+          if (!window.confirm("이 PDF를 삭제할까요? 구매자도 더 이상 내려받을 수 없습니다.")) return;
+          del.disabled = true;
+          sb().from("work_files").delete().eq("id", del.getAttribute("data-fdel")).then(function (r) {
+            if (r.error) { del.disabled = false; msg(dbErrText(r.error)); return; }
+            sb().storage.from("work-files").remove([del.getAttribute("data-path")]).then(function () { refreshFiles(work); });
+          });
+        }
+      });
+    }
+
+    /* ---------- 작품 삭제 ---------- */
+    function deleteWork(work) {
+      var msg = $("delMsg");
+      if (!window.confirm("「" + work.title + "」 작품을 삭제할까요?\n분석 자료와 PDF도 함께 삭제되며 되돌릴 수 없습니다.")) return;
+      setMsg(msg, "");
+      sb().from("work_files").select("storage_path").eq("work_id", work.id).then(function (fr) {
+        var paths = ((fr && fr.data) || []).map(function (x) { return x.storage_path; });
+        return sb().from("works").delete().eq("id", work.id).then(function (dr) {
+          if (dr.error) {
+            setMsg(msg, dr.error.code === "23503" || /foreign key/i.test(dr.error.message || "")
+              ? "구매 내역이 있는 작품은 삭제할 수 없습니다. 「비공개」로 바꿔 주세요." : dbErrText(dr.error));
+            return;
+          }
+          ctx.invalidateWorks();
+          return Promise.resolve(paths.length ? sb().storage.from("work-files").remove(paths) : null).then(function () { ctx.go("/admin"); });
+        });
+      }, function (err) { setMsg(msg, dbErrText(err)); });
+    }
+
+    /* ---------- 회원 ---------- */
+    function viewMembers(qs) {
+      var my = ctx.token(), q = (qs.get("q") || "").trim();
+      $("view").innerHTML = shell("/admin/members",
+        '<form id="memSearch" class="adm-search"><input type="search" id="memQ" placeholder="이메일로 검색" value="' + esc(q) + '" aria-label="이메일 검색"><button class="btn btn-solid" type="submit">검색</button></form>' +
+        '<div id="memList">' + loading() + "</div>");
+      $("memSearch").addEventListener("submit", function (e) {
+        e.preventDefault(); var v = $("memQ").value.trim();
+        ctx.go("/admin/members" + (v ? "?q=" + encodeURIComponent(v) : ""));
+      });
+      var qb = sb().from("profiles").select("id,email,display_name,role,created_at", { count: "exact" });
+      if (q) qb = qb.ilike("email", "%" + q.replace(/[%_\\]/g, "") + "%");
+      qb.order("created_at", { ascending: false }).limit(100).then(function (r) {
+        if (my !== ctx.token()) return;
+        var box = $("memList"); if (!box) return;
+        if (r.error) { box.innerHTML = errBox(r.error); return; }
+        var rows = r.data || [];
+        box.innerHTML = rows.length
+          ? '<p class="fine">전체 ' + (r.count == null ? rows.length : r.count) + "명" + (rows.length < (r.count || 0) ? " 중 최근 100명 표시" : "") + '</p><div class="tbl-wrap"><table class="tbl adm-table"><thead><tr><th>이메일</th><th>표시 이름</th><th>권한</th><th>가입일</th></tr></thead><tbody>' +
+            rows.map(function (m) {
+              return "<tr><td>" + esc(m.email || "") + "</td><td>" + esc(m.display_name || "-") + "</td><td>" + (m.role === "admin" ? "관리자" : "회원") + "</td><td>" + day(m.created_at) + "</td></tr>";
+            }).join("") + "</tbody></table></div><p class=\"fine\">회원 권한 변경은 보안을 위해 Supabase SQL Editor에서만 할 수 있습니다.</p>"
+          : '<p class="empty">조건에 맞는 회원이 없습니다.</p>';
+      }, function (e) { var box = $("memList"); if (box && my === ctx.token()) box.innerHTML = errBox(e); });
+    }
+
+    /* ---------- 구매 내역 ---------- */
+    function viewPurchases(qs) {
+      var my = ctx.token(), st = qs.get("status") || "";
+      if (["paid", "pending", "cancelled", "refunded"].indexOf(st) === -1) st = "";
+      var labels = ctx.statusLabel || {};
+      $("view").innerHTML = shell("/admin/purchases",
+        '<div class="adm-search"><label for="stSel" class="sr-only">상태</label><select id="stSel">' + opt("", "전체 상태", st) +
+        ["paid", "pending", "cancelled", "refunded"].map(function (s) { return opt(s, labels[s] || s, st); }).join("") + '</select></div><div id="purList">' + loading() + "</div>");
+      $("stSel").addEventListener("change", function () { ctx.go("/admin/purchases" + (this.value ? "?status=" + this.value : "")); });
+      var qb = sb().from("purchases").select("id,amount,status,created_at,paid_at,pg_provider,profiles(email),works(title)");
+      if (st) qb = qb.eq("status", st);
+      qb.order("created_at", { ascending: false }).limit(100).then(function (r) {
+        if (my !== ctx.token()) return;
+        var box = $("purList"); if (!box) return;
+        if (r.error) { box.innerHTML = errBox(r.error); return; }
+        var rows = r.data || [];
+        box.innerHTML = rows.length
+          ? '<div class="tbl-wrap"><table class="tbl adm-table"><thead><tr><th>일시</th><th>회원</th><th>작품</th><th>금액</th><th>상태</th></tr></thead><tbody>' +
+            rows.map(function (p) {
+              return "<tr><td>" + day(p.created_at) + "</td><td>" + esc(p.profiles ? p.profiles.email : "-") + "</td><td>" + esc(p.works ? p.works.title : "삭제된 작품") +
+                "</td><td>" + won(p.amount) + "</td><td>" + esc(labels[p.status] || p.status) + "</td></tr>";
+            }).join("") + "</tbody></table></div><p class=\"fine\">최근 100건 표시. 결제 승인·취소·환불 처리는 8단계(결제 시스템)에서 연결됩니다.</p>"
+          : '<p class="empty">구매 내역이 없습니다.</p>';
+      }, function (e) { var box = $("purList"); if (box && my === ctx.token()) box.innerHTML = errBox(e); });
+    }
+
+    /* ---------- 매출 통계 ---------- */
+    function bars(rows, labelKey) {
+      var max = rows.reduce(function (m, r) { return Math.max(m, r.amount); }, 0) || 1;
+      return '<div class="tbl-wrap"><table class="tbl adm-table"><thead><tr><th>' + (labelKey === "month" ? "월" : "작품") + "</th><th>건수</th><th>매출</th><th></th></tr></thead><tbody>" +
+        rows.map(function (r) {
+          return "<tr><td>" + esc(r[labelKey]) + "</td><td>" + esc(r.cnt) + "건</td><td>" + won(r.amount) + '</td><td class="bar-cell"><span class="bar" style="width:' + Math.max(2, Math.round(r.amount / max * 100)) + '%"></span></td></tr>';
+        }).join("") + "</tbody></table></div>";
+    }
+    function viewSales() {
+      var my = ctx.token();
+      $("view").innerHTML = shell("/admin/sales", '<div id="salesBox">' + loading() + "</div>");
+      sb().rpc("admin_sales_stats").then(function (r) {
+        if (my !== ctx.token()) return;
+        var box = $("salesBox"); if (!box) return;
+        if (r.error) {
+          box.innerHTML = /function|schema cache|PGRST202|404/i.test((r.error.message || "") + (r.error.code || ""))
+            ? '<p class="err">매출 통계 함수가 아직 없습니다. 6단계 가이드대로 <strong>step6.sql</strong> 을 Supabase SQL Editor에서 실행해 주세요.</p>'
+            : errBox(r.error);
+          return;
+        }
+        var s = r.data || {};
+        var card = function (label, val, sub) { return '<div class="stat"><span class="stat-l">' + label + '</span><strong class="stat-v">' + esc(val) + "</strong>" + (sub ? '<span class="muted">' + esc(sub) + "</span>" : "") + "</div>"; };
+        box.innerHTML = '<div class="stat-grid">' +
+          card("총 매출 (결제 완료)", won(s.paid_amount), (s.paid_count || 0) + "건") +
+          card("환불", won(s.refunded_amount), (s.refunded_count || 0) + "건") +
+          card("결제 대기", (s.pending_count || 0) + "건", "취소 " + (s.cancelled_count || 0) + "건") +
+          card("전체 회원", (s.members || 0) + "명", "") + "</div>" +
+          '<h2 class="adm-h">월별 매출</h2>' + ((s.by_month || []).length ? bars(s.by_month, "month") : '<p class="empty-sm">결제 완료된 내역이 없습니다.</p>') +
+          '<h2 class="adm-h">작품별 매출</h2>' + ((s.by_work || []).length ? bars(s.by_work, "title") : '<p class="empty-sm">결제 완료된 내역이 없습니다.</p>') +
+          '<p class="fine">매출은 「결제 완료」 상태만 합산합니다. 환불 금액은 매출에서 빼지 않고 따로 표시합니다. 월은 한국 시간 기준입니다.</p>';
+      }, function (e) { var box = $("salesBox"); if (box && my === ctx.token()) box.innerHTML = errBox(e); });
+    }
+
+    /* ---------- 라우팅 ---------- */
+    function render(path, qs) {
+      var m;
+      document.title = "관리자 · 문학연구소";
+      if (path === "/admin") viewWorks();
+      else if (path === "/admin/work/new") viewWorkForm(null);
+      else if ((m = path.match(/^\/admin\/work\/([0-9a-fA-F-]{8,40})$/))) viewWorkForm(m[1]);
+      else if (path === "/admin/members") viewMembers(qs);
+      else if (path === "/admin/purchases") viewPurchases(qs);
+      else if (path === "/admin/sales") viewSales();
+      else $("view").innerHTML = shell("", '<p class="empty">없는 관리자 페이지입니다. <a class="link-btn" href="#/admin">작품 관리로</a></p>');
+    }
+
+    return { render: render, _kinds: KINDS, _defs: DEFS, _parse: parseSection, _ser: serSection };
+  };
+})();
 
 </script>
   <script>
@@ -1081,6 +1661,7 @@ window.SAMPLE_DETAILS = {
     if (MODE === "db" && SESSION) {
       var nm = (PROFILE && PROFILE.display_name) || (SESSION.user && SESSION.user.email) || "회원";
       el.innerHTML = '<span class="auth-name" title="' + esc(nm) + '">' + esc(nm) + '</span>' +
+        (isAdmin() ? '<a class="btn btn-ghost" href="#/admin">관리자</a>' : "") +
         '<a class="btn btn-ghost" href="#/mypage">마이페이지</a>' +
         '<button type="button" class="btn btn-solid" data-logout="1">로그아웃</button>';
     } else {
@@ -1384,6 +1965,37 @@ window.SAMPLE_DETAILS = {
 
   var token = 0;
 
+  /* ---- 6단계: 관리자 ---- 화면 제한은 편의용이며, 실제 권한은 DB 정책(RLS)이 막습니다. */
+  var ADMIN = null;
+  function adminShell(title, inner) {
+    return '<section class="page-top"><div class="wrap"><nav class="crumbs" aria-label="현재 위치"><a href="#/">홈</a><span>관리자</span></nav>' +
+      '<h1 class="page-title">' + esc(title) + '</h1>' + inner + '</div></section>';
+  }
+  function renderAdmin(path, qs) {
+    document.title = "관리자 · 문학연구소";
+    if (MODE !== "db") {
+      $("view").innerHTML = adminShell("관리자", '<p>관리자 페이지는 Supabase에 연결된 뒤에 사용할 수 있습니다.</p>' + (MODE === "error" ? '<p class="err">' + esc(CONFIG_ERROR) + '</p>' : ""));
+      return;
+    }
+    if (!SESSION) { go("/login" + nextQuery(path)); return; }
+    if (!isAdmin()) {
+      $("view").innerHTML = adminShell("접근할 수 없습니다", '<p>관리자 계정만 사용할 수 있는 페이지입니다.</p><p><a class="link-btn" href="#/">홈으로</a></p>');
+      return;
+    }
+    if (!window.MUNHAK_ADMIN_FACTORY) {
+      $("view").innerHTML = adminShell("관리자", '<p class="err">관리자 모듈(admin.js)을 불러오지 못했습니다.</p>');
+      return;
+    }
+    if (!ADMIN) {
+      ADMIN = window.MUNHAK_ADMIN_FACTORY({
+        $: $, esc: esc, sb: function () { return sb; }, token: function () { return token; }, go: go,
+        showMessage: showMessage, SECTIONS: SECTIONS, RENDERERS: RENDERERS, statusLabel: STATUS_LABEL,
+        invalidateWorks: function () { worksPromise = null; }
+      });
+    }
+    ADMIN.render(path, qs);
+  }
+
   function route() {
     var my = ++token;
     var h = location.hash.replace(/^#/, "") || "/";
@@ -1393,6 +2005,7 @@ window.SAMPLE_DETAILS = {
     var m = path.match(/^\/work\/([A-Za-z0-9_-]+)$/);
 
     if (AUTH_PATHS.indexOf(path) !== -1) { renderAuthPage(path, qs); window.scrollTo(0, 0); return; }
+    if (path === "/admin" || path.indexOf("/admin/") === 0) { renderAdmin(path, qs); window.scrollTo(0, 0); return; }
 
     if (!worksPromise) $("view").innerHTML = loadingHTML();
 
