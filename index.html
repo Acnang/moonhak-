@@ -1173,7 +1173,7 @@ window.SAMPLE_DETAILS = {
               rows.map(function (p) {
                 var manual = p.pg_provider === "manual";
                 return "<tr><td>" + day(p.created_at) + "</td><td>" + esc(p.profiles ? p.profiles.email : "-") + "</td><td>" + esc(p.works ? p.works.title : "삭제된 작품") +
-                  "</td><td>" + won(p.amount) + "</td><td>" + esc(labels[p.status] || p.status) + (manual ? '<br><span class="muted">수동 지급</span>' : "") + "</td><td>" +
+                  "</td><td>" + won(p.amount) + "</td><td>" + esc(labels[p.status] || p.status) + (manual ? '<br><span class="muted">수동 지급</span>' : p.pg_provider === "test" ? '<br><span class="muted">테스트 결제</span>' : "") + "</td><td>" +
                   (manual && p.status === "paid" ? '<button type="button" class="btn btn-ghost btn-danger" data-revoke="' + esc(p.id) + '">회수</button>' : "") + "</td></tr>";
               }).join("") + "</tbody></table></div><p class=\"fine\">최근 100건 표시. 실제 결제의 승인·취소·환불은 8단계(결제 시스템)에서 연결됩니다.</p>"
             : '<p class="empty">구매 내역이 없습니다.</p>';
@@ -1207,7 +1207,7 @@ window.SAMPLE_DETAILS = {
         var box = $("salesBox"); if (!box) return;
         if (r.error) {
           box.innerHTML = /function|schema cache|PGRST202|404/i.test((r.error.message || "") + (r.error.code || ""))
-            ? '<p class="err">매출 통계 함수가 아직 없습니다. 6단계 가이드대로 <strong>step6.sql</strong> 을 Supabase SQL Editor에서 실행해 주세요.</p>'
+            ? '<p class="err">매출 통계 함수가 아직 없습니다. 6단계 가이드대로 <strong>step6.sql</strong>(과 step8.sql) 을 Supabase SQL Editor에서 실행해 주세요.</p>'
             : errBox(r.error);
           return;
         }
@@ -1217,10 +1217,11 @@ window.SAMPLE_DETAILS = {
           card("총 매출 (결제 완료)", won(s.paid_amount), (s.paid_count || 0) + "건") +
           card("환불", won(s.refunded_amount), (s.refunded_count || 0) + "건") +
           card("결제 대기", (s.pending_count || 0) + "건", "취소 " + (s.cancelled_count || 0) + "건") +
-          card("전체 회원", (s.members || 0) + "명", "") + "</div>" +
+          card("전체 회원", (s.members || 0) + "명", "") +
+          card("테스트 결제", won(s.test_amount), (s.test_count || 0) + "건 · 매출 제외") + card("결제 모드", ({ off: "꺼짐", test: "테스트", live: "실결제" })[s.payment_mode] || String(s.payment_mode || "-"), "수동 지급 " + (s.manual_count || 0) + "건 제외") + "</div>" +
           '<h2 class="adm-h">월별 매출</h2>' + ((s.by_month || []).length ? bars(s.by_month, "month") : '<p class="empty-sm">결제 완료된 내역이 없습니다.</p>') +
           '<h2 class="adm-h">작품별 매출</h2>' + ((s.by_work || []).length ? bars(s.by_work, "title") : '<p class="empty-sm">결제 완료된 내역이 없습니다.</p>') +
-          '<p class="fine">매출은 「결제 완료」 상태만 합산합니다. 환불 금액은 매출에서 빼지 않고 따로 표시합니다. 월은 한국 시간 기준입니다.</p>';
+          '<p class="fine">매출은 실제 「결제 완료」만 합산하며 테스트 결제·수동 지급은 제외합니다. 환불 금액은 매출에서 빼지 않고 따로 표시합니다. 월은 한국 시간 기준입니다.</p>';
       }, function (e) { var box = $("salesBox"); if (box && my === ctx.token()) box.innerHTML = errBox(e); });
     }
 
@@ -1610,7 +1611,7 @@ window.SAMPLE_DETAILS = {
       buy = '<div class="buy"><span class="badge badge-premium">구매 완료</span><span class="muted">전체 열람 가능</span></div>';
     } else {
       buy = '<div class="buy"><span class="price big">' + esc(priceText(w)) + '</span>' +
-        '<button type="button" class="btn btn-solid" data-buy="' + esc(w.id) + '">구매하기</button></div>';
+        '<button type="button" class="btn btn-solid" data-buy="' + esc(w.id) + '">구매하기</button><span class="muted" id="payNote"></span></div>';
     }
 
     var fileBtns = files.map(function (f) {
@@ -1644,13 +1645,14 @@ window.SAMPLE_DETAILS = {
       '<div class="detail-body">' + body +
         '<p class="print-only">문학연구소 · 개인 학습용 자료입니다. 무단 복제·배포를 금합니다. (출력일 ' + new Date().toLocaleDateString("ko-KR") + ")</p></div></div>";
     document.title = w.title + " 분석 · 문학연구소";
+    if ($("payNote")) getPayMode().then(function (m) { var n = $("payNote"); if (n) n.textContent = m === "test" ? "테스트 결제 모드 (실제 청구 없음)" : m === "off" ? "결제 준비 중" : ""; });
   }
 
   /* =====================================================================
      6. 안내창 / 파일 다운로드 / 인쇄
      ===================================================================== */
   var NOTICES = {
-    buy:    { t: "구매하기", b: "결제는 8단계에서 구현됩니다. PG사 계약과 API 키가 준비되기 전에는 테스트 모드로만 만들 수 있으며, 지금은 구매할 수 없습니다." }
+    buy:    { t: "구매하기", b: "결제 준비 중입니다." }
   };
   function showMessage(t, b) {
     $("noticeTitle").textContent = t;
@@ -1957,9 +1959,32 @@ window.SAMPLE_DETAILS = {
     if (MODE !== "db") return;
     sb.auth.signOut().then(function () { go("/"); }, function () { go("/"); });
   }
+  var payModePromise = null;
+  function getPayMode() {
+    if (MODE !== "db") return Promise.resolve("off");
+    if (!payModePromise) {
+      payModePromise = sb.rpc("payment_mode").then(function (r) { return (r && !r.error && r.data) || "off"; }, function () { return "off"; });
+    }
+    return payModePromise;
+  }
+  var TEST_MSG = {
+    login: "로그인이 필요합니다.", mode_off: "지금은 결제를 받지 않습니다. (결제 기능 준비 중)",
+    no_work: "구매할 수 없는 작품입니다.", already: "이미 구매한 작품입니다."
+  };
   function buyClick(slug) {
     if (MODE === "db" && !SESSION) { go("/login?next=" + encodeURIComponent("/work/" + slug) + "&need=buy"); return; }
-    showMessage(NOTICES.buy.t, NOTICES.buy.b);
+    var w = findWork(slug);
+    if (MODE !== "db" || !w) { showMessage("구매하기", "Supabase에 연결된 사이트에서만 구매할 수 있습니다."); return; }
+    getPayMode().then(function (mode) {
+      if (mode !== "test") { showMessage("구매하기", "지금은 결제를 받지 않습니다. 결제 기능은 준비 중이며, 실제 결제 연동이 끝나면 열립니다."); return; }
+      var price = (w.price || 0).toLocaleString("ko-KR");
+      if (!window.confirm("【테스트 결제】\n실제로 돈이 청구되지 않는 시험용 결제입니다.\n\n「" + w.title + "」 " + price + "원을 테스트로 구매할까요?")) return;
+      sb.rpc("test_checkout", { p_work: w.uuid }).then(function (r) {
+        if (r.error) { showMessage("결제하지 못했습니다", /function|schema cache|PGRST202|404/i.test(r.error.message || "") ? "결제 설정(step8.sql)이 아직 적용되지 않았습니다." : r.error.message); return; }
+        if (r.data === "ok" || r.data === "already") { payModePromise = null; route(); showMessage(r.data === "ok" ? "테스트 구매 완료" : "이미 구매한 작품입니다", r.data === "ok" ? "테스트 결제로 구매 처리되었습니다. (실제 결제 아님) 이제 전체 내용을 볼 수 있습니다." : "전체 내용을 볼 수 있습니다."); return; }
+        showMessage("결제하지 못했습니다", TEST_MSG[r.data] || "처리 중 오류가 발생했습니다.");
+      }, function (err) { showMessage("결제하지 못했습니다", String(err && err.message || err)); });
+    });
   }
 
   /* ---------- 시작: 세션 복구 + 메일 링크(인증/재설정) 처리 ---------- */
