@@ -9,6 +9,7 @@ type Env = Record<string, string | undefined>;
 type FetchFn = (url: string, init?: any) => Promise<Response>;
 
 const DEFAULT_API = "https://api.payapp.kr/oapi/v2";
+const DEFAULT_SLUG = "dynamic-handler";   // 함수 주소(/functions/v1/<이 이름>). Secrets 의 FUNCTION_SLUG 로 바꿀 수 있음
 
 async function sha256Hex(s: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
@@ -88,7 +89,7 @@ async function checkout(req: Request, env: Env, f: FetchFn, h: Record<string, st
     recvphone: phone,
     smsuse: "n",
     var1: order.id,
-    feedbackurl: `${env.SUPABASE_URL}/functions/v1/payapp?a=feedback`,
+    feedbackurl: `${env.SUPABASE_URL}/functions/v1/${env.FUNCTION_SLUG || DEFAULT_SLUG}?a=feedback`,
     checkretry: "y",
     requestdate: date,
     hash: await sha256Hex(env.PAYAPP_USERID + date + env.PAYAPP_REQUEST_KEY),

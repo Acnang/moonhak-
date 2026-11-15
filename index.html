@@ -428,8 +428,9 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; }
        ===================================================================== -->
   <script>
     window.MUNHAK_CONFIG = {
-      SUPABASE_URL: "https://qwsjjkhgfnypuzvxgoec.supabase.co",
-      SUPABASE_ANON_KEY: "sb_publishable_pZmVLiE7pDBWhCPdZEtwTA_j9JmcN3H"
+      SUPABASE_URL: "YOUR_SUPABASE_URL",
+      SUPABASE_ANON_KEY: "YOUR_SUPABASE_ANON_KEY",
+      PAY_FUNCTION: "dynamic-handler"
     };
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -2014,7 +2015,7 @@ window.SAMPLE_DETAILS = {
       sb.auth.getSession().then(function (r) {
         var tok = r && r.data && r.data.session && r.data.session.access_token;
         if (!tok) { btn.disabled = false; msg.textContent = PAY_ERR.login; return; }
-        return fetch(CFG.SUPABASE_URL.replace(/\/+$/, "") + "/functions/v1/payapp?a=checkout", {
+        return fetch(CFG.SUPABASE_URL.replace(/\/+$/, "") + "/functions/v1/" + encodeURIComponent(CFG.PAY_FUNCTION || "dynamic-handler") + "?a=checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: "Bearer " + tok, apikey: CFG.SUPABASE_ANON_KEY },
           body: JSON.stringify({ work_id: w.uuid, phone: phone, return_url: location.origin + location.pathname + "#/work/" + w.id + "?paid=1" })
